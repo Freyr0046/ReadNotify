@@ -1,4 +1,4 @@
-package com.freyr.readnotify
+package com.freyr.readmynotify
 
 import org.junit.Test
 

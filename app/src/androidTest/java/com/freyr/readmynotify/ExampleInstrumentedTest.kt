@@ -1,4 +1,4 @@
-package com.freyr.readnotify
+package com.freyr.readmynotify
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
