@@ -22,6 +22,7 @@ import java.util.*
 class NotificationService : NotificationListenerService() {
     private val TAG = this.javaClass.simpleName
     private var tts: TextToSpeech? = null
+    var needSpeak = true
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val mNotification: Notification? = sbn.notification
@@ -67,23 +68,26 @@ class NotificationService : NotificationListenerService() {
                         //文字轉語音
                         tts?.setPitch(1F)// 語調(1 為正常；0.5 為低一倍；2 為高一倍)
                         tts?.setSpeechRate(1F)// 速度(1 為正常；0.5 為慢一倍；2 為快一倍)
-                        val speechStatus =
-                            tts?.speak(speakMsg.toString(), TextToSpeech.QUEUE_FLUSH, null)
-                        if (speechStatus == TextToSpeech.ERROR) {
-                            Log.e(TAG, "TextToSpeech Error：")
+
+                        Log.d(TAG, "needSpeak：$needSpeak")
+                        if (needSpeak){
+                            val speechStatus =
+                                tts?.speak(speakMsg.toString(), TextToSpeech.QUEUE_FLUSH, null)
+                            if (speechStatus == TextToSpeech.ERROR) {
+                                Log.e(TAG, "TextToSpeech Error：")
+                            }
                         }
 
                         FirebaseFirestore.getInstance().let {
                             val time = Calendar.getInstance().timeInMillis
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS", Locale.getDefault())
+                            val date = dateFormat.format(Date(time))
                             val data = MessageData(
                                 notificationTitle,
                                 notificationText,
                                 notificationPkg,
-                                time
+                                date
                             )
-                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS", Locale.getDefault())
-                            val date = dateFormat.format(Date(time))
-                            Log.d(TAG, "date：$date")
 
                             it.collection(Build.MODEL)
                                 .document(date)

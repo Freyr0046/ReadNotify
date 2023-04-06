@@ -4,5 +4,5 @@ data class MessageData(
     val title: String? = "",
     val content: String? = "",
     val packageName: String? = "",
-    val time: Long
+    val time: String? = ""
 )

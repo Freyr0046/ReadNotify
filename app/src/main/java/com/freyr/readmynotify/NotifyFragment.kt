@@ -18,8 +18,6 @@ class NotifyFragment : BaseFragment<FragmentNotifyBinding>(FragmentNotifyBinding
 
     private var mNotifyAdapter: NotifyAdapter? = null
 
-    var notifyService: NotificationService? = null
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -51,6 +49,9 @@ class NotifyFragment : BaseFragment<FragmentNotifyBinding>(FragmentNotifyBinding
                 val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
                 startActivity(intent)
             }
+//            btnStopSpeak.setOnClickListener {
+//                NotificationService().needSpeak = false
+//            }
         }
     }
 
@@ -63,27 +64,14 @@ class NotifyFragment : BaseFragment<FragmentNotifyBinding>(FragmentNotifyBinding
     }
 
     private fun initData() {
-        Log.d(TAG, "通知權限：${checkNotifyPermission(requireContext())}")
-        Log.d(TAG, "requireActivity()：${requireActivity()}")
-        if (checkNotifyPermission(requireContext())) {
-            val serviceIntent = Intent(requireActivity(), NotificationService::class.java)
-            requireActivity().startService(serviceIntent)
+        val checkPermission = checkNotifyPermission(requireContext())
+        Log.d(TAG, "通知權限：$checkPermission")
+        if (checkPermission) {
+//            startNotifyService()
         } else {
             val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
             startActivity(intent)
         }
-    }
-
-    private fun startNotifyService() {
-        if (notifyService != null) {
-
-            val serviceIntent = Intent(requireActivity(), NotificationService::class.java)
-            requireActivity().startService(serviceIntent)
-        }
-
-    }
-
-    private fun stopNotifyService() {
     }
 
     private fun checkNotifyPermission(c: Context): Boolean {
@@ -109,6 +97,14 @@ class NotifyFragment : BaseFragment<FragmentNotifyBinding>(FragmentNotifyBinding
     override fun onDestroyView() {
         super.onDestroyView()
         mNotifyAdapter = null
+    }
+
+    private fun startNotifyService() {
+        val serviceIntent = Intent(requireActivity(), NotificationService::class.java)
+        requireActivity().startService(serviceIntent)
+    }
+
+    private fun stopNotifyService() {
         val serviceIntent = Intent(requireActivity(), NotificationService::class.java)
         requireActivity().stopService(serviceIntent)
     }
