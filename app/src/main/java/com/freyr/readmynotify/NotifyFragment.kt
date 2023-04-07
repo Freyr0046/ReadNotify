@@ -3,6 +3,7 @@ package com.freyr.readmynotify
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.text.TextUtils
@@ -47,6 +48,11 @@ class NotifyFragment : BaseFragment<FragmentNotifyBinding>(FragmentNotifyBinding
 //            tvNotifyReboot
             tvNotifyOpen.setOnClickListener {
                 val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                startActivity(intent)
+            }
+            tvBluetoothOpen.setOnClickListener {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                intent.data = Uri.fromParts("package", requireContext().packageName, null)
                 startActivity(intent)
             }
 //            btnStopSpeak.setOnClickListener {

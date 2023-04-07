@@ -11,7 +11,7 @@
         android:id="@+id/tv_notify_open"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="讀取訊息中："
+        android:text="前往開啟通知存取權"
         android:textSize="16sp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
@@ -20,6 +20,7 @@
         android:id="@+id/pg_notify_loading"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:visibility="gone"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintTop_toTopOf="@+id/tv_notify_open"
         app:layout_constraintBottom_toBottomOf="@+id/tv_notify_open"
@@ -36,6 +37,16 @@
         app:layout_constraintTop_toTopOf="@+id/tv_notify_open"
         app:layout_constraintBottom_toBottomOf="@+id/tv_notify_open"
         app:layout_constraintStart_toEndOf="@+id/tv_notify_open"/>
+
+    <TextView
+        android:id="@+id/tv_bluetooth_open"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="前往開啟藍芽位置"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@+id/tv_notify_open"
+        app:layout_constraintStart_toStartOf="parent"/>
 
 <!--    <Button-->
 <!--        android:id="@+id/btn_stop_speak"-->
@@ -60,6 +71,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_notify_open"/>
+        app:layout_constraintTop_toBottomOf="@+id/tv_bluetooth_open"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

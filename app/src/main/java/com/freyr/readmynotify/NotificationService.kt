@@ -5,6 +5,10 @@ import android.app.Notification
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -22,6 +26,7 @@ import java.util.*
 class NotificationService : NotificationListenerService() {
     private val TAG = this.javaClass.simpleName
     private var tts: TextToSpeech? = null
+    //是否唸出聲音
     var needSpeak = true
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -72,7 +77,7 @@ class NotificationService : NotificationListenerService() {
                         Log.d(TAG, "needSpeak：$needSpeak")
                         if (needSpeak){
                             val speechStatus =
-                                tts?.speak(speakMsg.toString(), TextToSpeech.QUEUE_FLUSH, null)
+                                tts?.speak(speakMsg.toString(), TextToSpeech.QUEUE_FLUSH, null, null)
                             if (speechStatus == TextToSpeech.ERROR) {
                                 Log.e(TAG, "TextToSpeech Error：")
                             }
@@ -111,6 +116,46 @@ class NotificationService : NotificationListenerService() {
         }
     }
 
+    //藍芽耳機是否連線
+    private fun audioOutputAvailable(): Boolean {
+        val audioManager: AudioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_AUDIO_OUTPUT)) {
+            return false
+        }
+        val isConnect = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }
+        Log.d(TAG, "藍芽耳機是否連線：$isConnect")
+
+        return isConnect
+    }
+
+    //藍芽裝置連線/斷線 回呼
+    private fun audioOutputCallback() {
+        val audioManager: AudioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        audioManager.registerAudioDeviceCallback(object : AudioDeviceCallback() {
+            override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+                super.onAudioDevicesAdded(addedDevices)
+                if (audioOutputAvailable()) {
+                    Log.d(TAG, "藍芽耳機已連線")
+                    needSpeak = true
+                }
+            }
+            override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+                super.onAudioDevicesRemoved(removedDevices)
+                if (!audioOutputAvailable()) {
+                    Log.d(TAG, "藍芽耳機已斷線")
+                    needSpeak = false
+                    // TODO: is this correct
+                    Toast.makeText(
+                        applicationContext,
+                        "藍芽耳機已斷線，請重新連線以繼續聆聽訊息",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }, null)
+    }
+
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         Log.d(TAG, "onNotificationRemoved：${sbn}")
     }
@@ -119,6 +164,7 @@ class NotificationService : NotificationListenerService() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "onCreate：")
+
         //文字轉語音
         tts = TextToSpeech(applicationContext) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -137,6 +183,7 @@ class NotificationService : NotificationListenerService() {
                 ).show()
             }
         }
+
         //不進入休眠
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         val wakeLock = powerManager.newWakeLock(
@@ -144,6 +191,9 @@ class NotificationService : NotificationListenerService() {
             "MyWakeLock"
         )
         wakeLock.acquire()
+
+        //藍芽裝置連線/斷線 回呼
+        audioOutputCallback()
     }
 
     override fun onDestroy() {
