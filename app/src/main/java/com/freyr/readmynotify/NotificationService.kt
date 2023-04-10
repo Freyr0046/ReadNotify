@@ -25,50 +25,70 @@ import java.util.*
 class NotificationService : NotificationListenerService() {
     private val TAG = this.javaClass.simpleName
     private var tts: TextToSpeech? = null
+
     //是否唸出聲音
     private var needSpeak = true
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        val mNotification: Notification? = sbn.notification
         // 包名
         val notificationPkg = sbn.packageName
 //        Log.d(TAG, "onNotificationPosted：包名：$notificationPkg")
-        if (mNotification != null) {
-            val extras: Bundle = mNotification.extras
+        sbn.notification?.let { mNotify ->
+            val extras: Bundle = mNotify.extras
             // 標題
-            val notificationTitle = extras.getString(Notification.EXTRA_TITLE)
+            val notificationTitle =
+                extras.getCharSequence(Notification.EXTRA_TITLE)
             // 內容
-            val notificationText = extras.getString(Notification.EXTRA_TEXT)
+            var notificationText = extras.getCharSequence(Notification.EXTRA_TEXT)
 
             //2023.03.28 暫時只接收CATEGORY_MESSAGE的推播
-            when (mNotification.category) {
+            when (mNotify.category) {
                 Notification.CATEGORY_SYSTEM, Notification.CATEGORY_SERVICE, null -> {
                     //do nothing
                 }
                 else -> {
                     //Line訊息 重複問題
                     if (sbn.tag != null) {
+                        val groupName =
+                            extras.getCharSequence(Notification.EXTRA_SUB_TEXT)
+
                         val notifyMsg = StringBuilder("")
                         Log.d(TAG, "onNotificationPosted：包名：$notificationPkg")
-//                        Log.d(TAG, "推播：包名：$notificationPkg\n" +
-//                                "title：${notificationTitle}\n" +
-//                                "content：${notificationText}\n" +
-//                                "category：${mNotification.category}\n" +
-//                                "number：${mNotification.number}\n" +
-//                                "publicVersion：${mNotification.publicVersion}\n" +
-//                                "tickerText：${mNotification.tickerText}\n" +
-//                                "EXTRA_SUB_TEXT：${extras.getString(Notification.EXTRA_SUB_TEXT)}\n"+
-//                                "EXTRA_SUMMARY_TEXT：${extras.getString(Notification.EXTRA_SUMMARY_TEXT)}\n"+
-//                                "EXTRA_TEMPLATE：${extras.getString(Notification.EXTRA_TEMPLATE)}\n"+
-//                                "EXTRA_TEXT_LINES：${extras.getString(Notification.EXTRA_TEXT_LINES)}\n"+
-//                                "EXTRA_BIG_TEXT：${extras.getString(Notification.EXTRA_BIG_TEXT)}\n"
+//                        Log.d(
+//                            TAG, "推播：包名：$notificationPkg\n" +
+//                                    "title：${notificationTitle}\n" +
+//                                    "content：${notificationText}\n" +
+//                                    "category：${mNotify.category}\n" +
+//                                    "number：${mNotify.number}\n" +
+//                                    "publicVersion：${mNotify.publicVersion}\n" +
+//                                    "tickerText：${mNotify.tickerText}\n" +
+//                                    "EXTRA_SUB_TEXT：${groupName}\n" +
+//                                    "EXTRA_SUMMARY_TEXT：${extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)}\n" +
+//                                    "EXTRA_TEMPLATE：${extras.getCharSequence(Notification.EXTRA_TEMPLATE)}\n" +
+//                                    "EXTRA_TEXT_LINES：${extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)}\n"+//多則訊息堆疊(需逐向印出)
+//                                    "EXTRA_BIG_TEXT：${extras.getCharSequence(Notification.EXTRA_BIG_TEXT)}\n" +
 //                        )
                         when {
                             notificationPkg.contains("line") -> {
                                 notifyMsg.append("Line： ")
+                                if (groupName != null) {
+                                    notifyMsg.append("群組： $groupName： ")
+                                }
                             }
                             notificationPkg.contains("facebook") -> {
                                 notifyMsg.append("facebook： ")
+                            }
+                            notificationPkg.contains("instagram") -> {
+                                notifyMsg.append("instagram： ")
+
+                                notificationTitle?.let { title ->
+                                    if (notificationText != null) {
+                                        if (notificationText!!.length > title.length) {
+                                            notificationText =
+                                                notificationText!!.substring(title.length)
+                                        }
+                                    }
+                                }
                             }
                         }
                         notifyMsg.append("${notificationTitle}說")
@@ -76,18 +96,24 @@ class NotificationService : NotificationListenerService() {
                         Log.d(TAG, "文字轉語音：${notifyMsg}")
 
                         //文字轉語音
-                        Log.d(TAG, "needSpeak：$needSpeak")
-                        if (needSpeak) {
-                            val speechStatus =
-                                tts?.speak(
-                                    notifyMsg.toString(),
-                                    TextToSpeech.QUEUE_ADD,
-                                    null,
-                                    packageName
-                                )
-                            if (speechStatus == TextToSpeech.ERROR) {
-                                Log.e(TAG, "TextToSpeech Error：")
+                        //不唸出 e-Mail
+                        if (mNotify.category != Notification.CATEGORY_EMAIL) {
+                            Log.d(TAG, "needSpeak：$needSpeak")
+                            if (needSpeak) {
+                                val speechStatus =
+                                    tts?.speak(
+                                        notifyMsg.toString(),
+                                        TextToSpeech.QUEUE_ADD,
+                                        null,
+                                        packageName
+                                    )
+                                if (speechStatus == TextToSpeech.ERROR) {
+                                    Log.e(TAG, "TextToSpeech Error：")
+                                }
                             }
+                        }else{
+                            //mail 內容改取 BIG_TEXT(主旨+內容)，EXTRA_TEXT 為 主旨。
+                            notificationText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)
                         }
 
                         //暫存
@@ -96,16 +122,21 @@ class NotificationService : NotificationListenerService() {
                             val dateFormat =
                                 SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS", Locale.getDefault())
                             val date = dateFormat.format(Date(time))
-                            val data = MessageData(
-                                notificationTitle,
-                                notificationText,
-                                notificationPkg,
-                                date
-                            )
+                            val dateMonth = date.substring(0, 7)
+                            val dateDay = date.substring(0, 10)
 
+                            val hashData = hashMapOf(
+                                "內容" to notificationText.toString(),
+                                "StatusBarNotification" to sbn.toString(),
+                                "Bundle" to extras.toString(),
+                                "Notification" to sbn.notification.toString(),
+                                "EXTRA_SUB_TEXT" to groupName
+                            )
+                            //機型(後期可改為 唯一識別)
                             it.collection(Build.MODEL)
-                                .document(date)
-                                .set(data, SetOptions.merge())
+                                    //年+月/日/包名/人/時間
+                                .document("$dateMonth/$dateDay/$notificationPkg/$notificationTitle/$date")
+                                .set(hashData, SetOptions.merge())
                                 .addOnSuccessListener {
 //                                    Log.d(
 //                                        TAG, "updateDatabase：successfully\n" +
@@ -121,7 +152,7 @@ class NotificationService : NotificationListenerService() {
                         }
                     }
 
-                    if (mNotification.category == Notification.CATEGORY_MESSAGE) {
+                    if (mNotify.category == Notification.CATEGORY_MESSAGE) {
                         // TODO: 將內容加入 可視清單中
                     }
                 }
