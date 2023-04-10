@@ -6,15 +6,14 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.AudioDeviceCallback
-import android.media.AudioDeviceInfo
-import android.media.AudioManager
+import android.media.*
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import android.widget.Toast
 import com.google.firebase.firestore.FirebaseFirestore
@@ -27,7 +26,7 @@ class NotificationService : NotificationListenerService() {
     private val TAG = this.javaClass.simpleName
     private var tts: TextToSpeech? = null
     //是否唸出聲音
-    var needSpeak = true
+    private var needSpeak = true
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val mNotification: Notification? = sbn.notification
@@ -49,7 +48,7 @@ class NotificationService : NotificationListenerService() {
                 else -> {
                     //Line訊息 重複問題
                     if (sbn.tag != null) {
-                        val speakMsg = StringBuilder("")
+                        val notifyMsg = StringBuilder("")
                         Log.d(TAG, "onNotificationPosted：包名：$notificationPkg")
 //                        Log.d(TAG, "推播：包名：$notificationPkg\n" +
 //                                "title：${notificationTitle}\n" +
@@ -64,28 +63,38 @@ class NotificationService : NotificationListenerService() {
 //                                "EXTRA_TEXT_LINES：${extras.getString(Notification.EXTRA_TEXT_LINES)}\n"+
 //                                "EXTRA_BIG_TEXT：${extras.getString(Notification.EXTRA_BIG_TEXT)}\n"
 //                        )
-                        if (notificationPkg.contains("line")) {
-                            speakMsg.append("Line： ")
+                        when {
+                            notificationPkg.contains("line") -> {
+                                notifyMsg.append("Line： ")
+                            }
+                            notificationPkg.contains("facebook") -> {
+                                notifyMsg.append("facebook： ")
+                            }
                         }
-                        speakMsg.append("${notificationTitle}說")
-                        speakMsg.append(notificationText)
-                        Log.d(TAG, "文字轉語音：${speakMsg}")
-                        //文字轉語音
-                        tts?.setPitch(1F)// 語調(1 為正常；0.5 為低一倍；2 為高一倍)
-                        tts?.setSpeechRate(1F)// 速度(1 為正常；0.5 為慢一倍；2 為快一倍)
+                        notifyMsg.append("${notificationTitle}說")
+                        notifyMsg.append(notificationText)
+                        Log.d(TAG, "文字轉語音：${notifyMsg}")
 
+                        //文字轉語音
                         Log.d(TAG, "needSpeak：$needSpeak")
-                        if (needSpeak){
+                        if (needSpeak) {
                             val speechStatus =
-                                tts?.speak(speakMsg.toString(), TextToSpeech.QUEUE_FLUSH, null, null)
+                                tts?.speak(
+                                    notifyMsg.toString(),
+                                    TextToSpeech.QUEUE_ADD,
+                                    null,
+                                    packageName
+                                )
                             if (speechStatus == TextToSpeech.ERROR) {
                                 Log.e(TAG, "TextToSpeech Error：")
                             }
                         }
 
+                        //暫存
                         FirebaseFirestore.getInstance().let {
                             val time = Calendar.getInstance().timeInMillis
-                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS", Locale.getDefault())
+                            val dateFormat =
+                                SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS", Locale.getDefault())
                             val date = dateFormat.format(Date(time))
                             val data = MessageData(
                                 notificationTitle,
@@ -98,12 +107,16 @@ class NotificationService : NotificationListenerService() {
                                 .document(date)
                                 .set(data, SetOptions.merge())
                                 .addOnSuccessListener {
-                                    Log.d(TAG, "updateDatabase：successfully\n" +
-                                            "data：$data")
+//                                    Log.d(
+//                                        TAG, "updateDatabase：successfully\n" +
+//                                                "data：$data"
+//                                    )
                                 }
                                 .addOnFailureListener { e: Exception ->
-                                    Log.e(TAG, "updateDatabase：fail\n" +
-                                            "$e")
+                                    Log.e(
+                                        TAG, "updateDatabase：fail\n" +
+                                                "$e"
+                                    )
                                 }
                         }
                     }
@@ -122,8 +135,10 @@ class NotificationService : NotificationListenerService() {
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_AUDIO_OUTPUT)) {
             return false
         }
-        val isConnect = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }
+        val isConnect = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            .any { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }
         Log.d(TAG, "藍芽耳機是否連線：$isConnect")
+        needSpeak = isConnect
 
         return isConnect
     }
@@ -135,16 +150,13 @@ class NotificationService : NotificationListenerService() {
         audioManager.registerAudioDeviceCallback(object : AudioDeviceCallback() {
             override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
                 super.onAudioDevicesAdded(addedDevices)
-                if (audioOutputAvailable()) {
-                    Log.d(TAG, "藍芽耳機已連線")
-                    needSpeak = true
-                }
+
+                audioOutputAvailable()
             }
+
             override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
                 super.onAudioDevicesRemoved(removedDevices)
                 if (!audioOutputAvailable()) {
-                    Log.d(TAG, "藍芽耳機已斷線")
-                    needSpeak = false
                     // TODO: is this correct
                     Toast.makeText(
                         applicationContext,
@@ -163,7 +175,6 @@ class NotificationService : NotificationListenerService() {
     @SuppressLint("InvalidWakeLockTag", "WakelockTimeout")
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "onCreate：")
 
         //文字轉語音
         tts = TextToSpeech(applicationContext) { status ->
@@ -182,7 +193,60 @@ class NotificationService : NotificationListenerService() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
+
+            //文字轉語音-設置音源焦點
+            val audioAttrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+            val audioFocus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(audioAttrs)
+                .setFocusGain(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                .setWillPauseWhenDucked(true)
+                .setOnAudioFocusChangeListener { focusChange ->
+                    when (focusChange) {
+                        AudioManager.AUDIOFOCUS_LOSS -> {
+                            Log.d(TAG, "AudioFocus：音頻焦點丟失，永久暫停播放")
+                        }
+                        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                            Log.d(TAG, "AudioFocus：暫停播放")
+                        }
+                        AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                            Log.d(TAG, "AudioFocus：降低音量，繼續播放")
+                        }
+                        AudioManager.AUDIOFOCUS_GAIN -> {
+                            Log.d(TAG, "AudioFocus：再次獲取音頻焦點")
+                        }
+                    }
+                }
+                .build()
+            tts?.setAudioAttributes(audioAttrs)
+            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                val audioManager: AudioManager =
+                    getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+                override fun onDone(utteranceId: String?) {
+                    val abandon = audioManager.abandonAudioFocusRequest(audioFocus)
+                    Log.d(TAG, "AudioListener：abandon：$abandon。")
+                }
+
+                override fun onError(p0: String?) {
+                    val abandon = audioManager.abandonAudioFocusRequest(audioFocus)
+                    Log.d(TAG, "AudioListener：abandon：$abandon。")
+                }
+
+                override fun onStart(p0: String?) {
+                    val audioResult = audioManager.requestAudioFocus(audioFocus)
+                    Log.d(
+                        TAG,
+                        "AudioListener：audioResult：$audioResult。${audioResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED}"
+                    )
+                }
+            })
         }
+        //設置音量與音調
+        tts?.setPitch(1F)// 語調(1 為正常；0.5 為低一倍；2 為高一倍)
+        tts?.setSpeechRate(1F)// 速度(1 為正常；0.5 為慢一倍；2 為快一倍)
 
         //不進入休眠
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager

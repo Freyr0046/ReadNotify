@@ -33,6 +33,13 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    def getArtifactName = {
+        defaultConfig ->
+            def today = (new Date().format("yyyy")).toInteger() - 1911 + "" + new Date().format("MMdd")
+            return "readNotify-app-" + today + "-" + defaultConfig.versionName + "[" + defaultConfig.versionCode + "]"
+    }
+    setProperty("archivesBaseName", getArtifactName(defaultConfig))
 }
 
 dependencies {

@@ -45,6 +45,7 @@
         android:layout_marginTop="10dp"
         android:text="前往開啟藍芽位置"
         android:textSize="16sp"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@+id/tv_notify_open"
         app:layout_constraintStart_toStartOf="parent"/>
 
