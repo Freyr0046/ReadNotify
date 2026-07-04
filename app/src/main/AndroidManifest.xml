@@ -41,11 +41,6 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name=".NotifyForegroundService"
-            android:enabled="true"
-            android:exported="true" />
-
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"

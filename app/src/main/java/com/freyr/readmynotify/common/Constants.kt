@@ -19,17 +19,4 @@ object Constants {
     const val SET_COUNTDOWN = "com.freyr.mysportrecorder.SET_COUNTDOWN"
 
     const val WORK_TAG_ACTIVATE_ALARMS = "com.freyr.mysportrecorder.WORK_TAG_ACTIVATE_ALARMS"
-
-    const val NOTIFY_FOREGROUND_SERVICE_ID = 1001
-
-    // speaker暫停或繼續
-    const val REQUEST_SPEAKER_PLAY = 100
-    const val REQUEST_SPEAKER_STOP = 200
-    const val REQUEST_SPEAKER_CLOSE = 300
-
-    // foregroundService extra
-    const val SERVICE_EXTRA = "arg"
-    const val EXTRA_SPEAKER_PLAY = "EXTRA_SPEAKER_PLAY"
-    const val EXTRA_SPEAKER_STOP = "EXTRA_SPEAKER_STOP"
-    const val EXTRA_SPEAKER_CLOSE = "EXTRA_SPEAKER_CLOSE"
 }
