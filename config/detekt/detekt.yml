@@ -15,9 +15,9 @@ complexity:
 style:
   ReturnCount:
     # NotificationService.onNotificationPosted 使用 guard clause 提早
-    # return（空值/自我黑名單/白名單三層防禦檢查），比巢狀 if-else 更易讀，
-    # 符合 PRD 3.1.1 的防禦性設計要求。
-    max: 4
+    # return（群組摘要/空值/自我黑名單/白名單四層防禦檢查），比巢狀
+    # if-else 更易讀，符合 PRD 3.1.1 的防禦性設計要求。
+    max: 5
   ForbiddenComment:
     active: true
   UnusedPrivateMember:

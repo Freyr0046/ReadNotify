@@ -18,6 +18,18 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
+ * LINE 等聊天 App 常會為同一則訊息額外發出一則「群組摘要」通知（相容舊版
+ * Android／穿戴裝置用），兩則都會觸發 onNotificationPosted，若不過濾會
+ * 造成同一則訊息被唸兩次。這是 Android 官方定義的通用旗標，與套件名稱
+ * 無關，不會誤傷沒有設定 tag 的其他白名單 App。抽成純函式方便單元測試
+ * （StatusBarNotification 無法在純 JUnit 環境建構/mock）。
+ */
+internal fun isGroupSummaryNotification(notification: Notification?): Boolean {
+    val flags = notification?.flags ?: 0
+    return (flags and Notification.FLAG_GROUP_SUMMARY) != 0
+}
+
+/**
  * 精簡為轉接層：空值檢查 → 自我黑名單（測試標記例外）→ 白名單過濾 →
  * 交給 Domain 層組裝並播報。業務邏輯（模板/截斷/URL 取代/佇列）皆已下放到
  * BuildAnnouncementUseCase 與 EnqueueAnnouncementUseCase（doc/phase1-spec.md
@@ -51,6 +63,10 @@ class NotificationService : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val packageName = sbn.packageName
         val isSelfTestNotification = sbn.tag == SelfTestNotification.TAG
+
+        if (isGroupSummaryNotification(sbn.notification)) {
+            return
+        }
 
         // 3.1.1 自我無限循環防護：本 App 自身通知一律阻擋，唯有自我測試工具
         // 發出的特殊標記通知為唯一例外（doc/phase3-contract-lock.md 決議 #4）。
