@@ -1,5 +1,6 @@
 package com.freyr.readmynotify.ui.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.freyr.readmynotify.domain.model.EngineErrorReason
@@ -15,6 +16,7 @@ import com.freyr.readmynotify.domain.usecase.ObserveWhitelistUseCase
 import com.freyr.readmynotify.domain.usecase.SendTestNotificationUseCase
 import com.freyr.readmynotify.domain.usecase.SetAppWhitelistedUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -92,25 +94,32 @@ class MainViewModel
 
         private fun runInitialCheck() {
             viewModelScope.launch {
-                if (!checkNotificationAccessUseCase()) {
-                    _uiState.value = MainUiState.PermissionDenied
-                    return@launch
+                try {
+                    if (!checkNotificationAccessUseCase()) {
+                        _uiState.value = MainUiState.PermissionDenied
+                        return@launch
+                    }
+
+                    val initResult = initializeTtsEngineUseCase()
+                    if (initResult.isFailure) {
+                        val reason =
+                            (observeEngineStateUseCase().value as? TtsEngineState.Error)?.reason
+                                ?: EngineErrorReason.INIT_FAILED
+                        _uiState.value = MainUiState.EngineError(reason)
+                        return@launch
+                    }
+
+                    installedApps = getInstalledAppsUseCase().getOrDefault(emptyList())
+                    whitelist = observeWhitelistUseCase().firstOrNull() ?: emptySet()
+                    _uiState.value = buildActiveState()
+
+                    startObservingLiveUpdatesIfNeeded()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "runInitialCheck failed unexpectedly", e)
+                    _uiState.value = MainUiState.EngineError(EngineErrorReason.INIT_FAILED)
                 }
-
-                val initResult = initializeTtsEngineUseCase()
-                if (initResult.isFailure) {
-                    val reason =
-                        (observeEngineStateUseCase().value as? TtsEngineState.Error)?.reason
-                            ?: EngineErrorReason.INIT_FAILED
-                    _uiState.value = MainUiState.EngineError(reason)
-                    return@launch
-                }
-
-                installedApps = getInstalledAppsUseCase().getOrDefault(emptyList())
-                whitelist = observeWhitelistUseCase().firstOrNull() ?: emptySet()
-                _uiState.value = buildActiveState()
-
-                startObservingLiveUpdatesIfNeeded()
             }
         }
 
@@ -171,4 +180,8 @@ class MainViewModel
                     isChecked = whitelist.contains(app.packageName),
                 )
             }
+
+        private companion object {
+            const val TAG = "MainViewModel"
+        }
     }
