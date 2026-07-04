@@ -55,6 +55,25 @@ Google Play Console 的「應用程式內容」→「權限」章節，`QUERY_AL
 
 ---
 
+## 事後補充：Edge-to-Edge 處理（使用者發現，2026-07-07）
+
+本文件初版完成後，使用者檢視實機截圖時發現 `TtsPlayingBanner` 文字與狀態列
+圖示重疊，指出「目前看起來沒做 edge to edge 的處理」。確認後為真：
+`MainActivity` 未呼叫 `enableEdgeToEdge()`，且沒有任何 Composable 套用
+系統列 insets padding。Android 15+（targetSdk 35+）強制 edge-to-edge、
+無法退出，導致內容預設畫到狀態列/導覽列底下——這也是 Task 13/15 實機測試
+過程中，多次點擊畫面下緣按鈕卻誤觸「返回主畫面」手勢的根本原因（按鈕的
+可點擊區域一路延伸到手勢導覽列的保留區）。
+
+修正：`MainActivity` 呼叫 `enableEdgeToEdge()` 並讓根 `Surface` 填滿視窗
+（背景維持真正 edge-to-edge）；`MainScreenContent` 的外層 `Box` 加上
+`Modifier.windowInsetsPadding(WindowInsets.safeDrawing)`，把實際內容
+（文字、按鈕）從系統列往內推。已於 Pixel 7 實機重新驗證：狀態列不再遮擋
+文字、按鈕與導覽列之間恢復安全間距、full gate 與 3 個 `MainScreenTest`
+測試皆維持綠燈。
+
+---
+
 ## 已知後續建議（非本次任務範圍，記錄供未來規劃參考）
 
 - **白名單清單雜訊過多**：實機測試時發現 `PackageManager.getInstalledApplications()`
