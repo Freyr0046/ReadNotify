@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -57,6 +58,30 @@ class MainScreenTest {
         intent as MainViewIntent.OnAppWhitelistToggled
         assertEquals("com.line", intent.packageName)
         assertTrue(intent.checked)
+    }
+
+    @Test
+    fun idleConfig_searchFieldFiltersWhitelistRowsByAppLabel() {
+        val items =
+            listOf(
+                AppWhitelistItem(packageName = "com.line", appLabel = "Line", isChecked = false),
+                AppWhitelistItem(packageName = "com.facebook.katana", appLabel = "Facebook", isChecked = false),
+            )
+
+        composeTestRule.setContent {
+            MainScreenContent(
+                uiState = MainUiState.IdleConfig(installedApps = items),
+                onIntent = {},
+            )
+        }
+
+        composeTestRule.onNodeWithText("Line").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Facebook").assertIsDisplayed()
+
+        composeTestRule.onNodeWithText("搜尋 App 名稱").performTextInput("Lin")
+
+        composeTestRule.onNodeWithText("Line").assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Facebook").assertCountEquals(0)
     }
 
     @Test

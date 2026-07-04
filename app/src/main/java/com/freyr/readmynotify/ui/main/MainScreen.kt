@@ -13,12 +13,19 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -134,6 +141,10 @@ private fun InitCheckingContent(modifier: Modifier = Modifier) {
 /**
  * IdleConfig 的白名單清單若為空，顯示區塊層級的 empty-hint 文案，
  * 不視為獨立的頂層 UiState（doc/phase1-spec.md Screen Inventory 設計備註）。
+ *
+ * 搜尋框的輸入文字純粹是畫面顯示用的過濾條件，不影響白名單本身的business
+ * 邏輯，因此刻意留在 Compose 本地狀態（不放進 [MainUiState]／不經過
+ * [MainViewModel]），符合 UI 層「dumb」的原則。
  */
 @Composable
 private fun IdleConfigContent(
@@ -141,14 +152,42 @@ private fun IdleConfigContent(
     onIntent: (MainViewIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredApps =
+        remember(installedApps, searchQuery) {
+            if (searchQuery.isBlank()) {
+                installedApps
+            } else {
+                installedApps.filter { it.appLabel.contains(searchQuery, ignoreCase = true) }
+            }
+        }
+
     Column(modifier = modifier.fillMaxSize()) {
-        if (installedApps.isEmpty()) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            placeholder = { Text("搜尋 App 名稱") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true,
+        )
+
+        if (filteredApps.isEmpty()) {
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                Text("尚未偵測到可勾選的應用程式")
+                Text(
+                    if (installedApps.isEmpty()) {
+                        "尚未偵測到可勾選的應用程式"
+                    } else {
+                        "找不到符合「$searchQuery」的 App"
+                    },
+                )
             }
         } else {
             LazyColumn(modifier = Modifier.weight(1f)) {
-                items(installedApps, key = { it.packageName }) { item ->
+                items(filteredApps, key = { it.packageName }) { item ->
                     AppWhitelistRow(
                         item = item,
                         onToggle = { packageName, checked ->
