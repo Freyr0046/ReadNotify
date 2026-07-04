@@ -3,9 +3,11 @@ package com.freyr.readmynotify.di
 import com.freyr.readmynotify.data.repository.InstalledAppRepositoryImpl
 import com.freyr.readmynotify.data.repository.NotificationAccessRepositoryImpl
 import com.freyr.readmynotify.data.repository.NotificationWhitelistRepositoryImpl
+import com.freyr.readmynotify.data.repository.TtsEngineRepositoryImpl
 import com.freyr.readmynotify.domain.repository.InstalledAppRepository
 import com.freyr.readmynotify.domain.repository.NotificationAccessRepository
 import com.freyr.readmynotify.domain.repository.NotificationWhitelistRepository
+import com.freyr.readmynotify.domain.repository.TtsEngineRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -29,4 +31,9 @@ abstract class RepositoryModule {
     abstract fun bindNotificationAccessRepository(
         impl: NotificationAccessRepositoryImpl,
     ): NotificationAccessRepository
+
+    @Binds
+    abstract fun bindTtsEngineRepository(
+        impl: TtsEngineRepositoryImpl,
+    ): TtsEngineRepository
 }
