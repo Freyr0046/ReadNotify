@@ -8,6 +8,7 @@ import com.freyr.readmynotify.domain.usecase.InitializeTtsEngineUseCase
 import com.freyr.readmynotify.domain.usecase.ObserveEngineStateUseCase
 import com.freyr.readmynotify.domain.usecase.ObservePlaybackStateUseCase
 import com.freyr.readmynotify.domain.usecase.ObserveWhitelistUseCase
+import com.freyr.readmynotify.domain.usecase.SendTestNotificationUseCase
 import com.freyr.readmynotify.domain.usecase.SetAppWhitelistedUseCase
 import com.freyr.readmynotify.domain.usecase.impl.BuildAnnouncementUseCaseImpl
 import com.freyr.readmynotify.domain.usecase.impl.CheckNotificationAccessUseCaseImpl
@@ -17,6 +18,7 @@ import com.freyr.readmynotify.domain.usecase.impl.InitializeTtsEngineUseCaseImpl
 import com.freyr.readmynotify.domain.usecase.impl.ObserveEngineStateUseCaseImpl
 import com.freyr.readmynotify.domain.usecase.impl.ObservePlaybackStateUseCaseImpl
 import com.freyr.readmynotify.domain.usecase.impl.ObserveWhitelistUseCaseImpl
+import com.freyr.readmynotify.domain.usecase.impl.SendTestNotificationUseCaseImpl
 import com.freyr.readmynotify.domain.usecase.impl.SetAppWhitelistedUseCaseImpl
 import dagger.Binds
 import dagger.Module
@@ -71,4 +73,9 @@ abstract class UseCaseModule {
     abstract fun bindObservePlaybackStateUseCase(
         impl: ObservePlaybackStateUseCaseImpl,
     ): ObservePlaybackStateUseCase
+
+    @Binds
+    abstract fun bindSendTestNotificationUseCase(
+        impl: SendTestNotificationUseCaseImpl,
+    ): SendTestNotificationUseCase
 }

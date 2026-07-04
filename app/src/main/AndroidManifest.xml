@@ -15,6 +15,10 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
+    <!-- 3.1.5 自我測試工具需要實際發出一則系統通知（Android 13+ 為執行時權限，
+         目前尚未實作要求使用者授權的 UI 流程，未授權時通知僅靜默不顯示，不影響其他功能） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".ReadNotifyApplication"
         android:allowBackup="true"
