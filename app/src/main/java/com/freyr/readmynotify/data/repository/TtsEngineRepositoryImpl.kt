@@ -124,6 +124,10 @@ class TtsEngineRepositoryImpl
                     if (speakResult == TextToSpeech.ERROR && continuation.isActive) {
                         continuation.resumeWith(Result.failure(IllegalStateException("speak() returned ERROR")))
                     }
+
+                    // 協程被取消時（例如呼叫端 scope 提前結束）底層 TTS 仍會繼續背景朗讀，
+                    // 需要主動停止。
+                    continuation.invokeOnCancellation { tts.stop() }
                 }
             }
     }
