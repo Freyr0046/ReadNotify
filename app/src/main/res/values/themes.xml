@@ -13,4 +13,17 @@
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
     </style>
+
+    //初始背景圖
+    <style name="LaunchTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/ic_speaker</item>
+    </style>
+
+    <!-- Single-Activity 冷啟動用（取代 SplashActivity，見 doc/phase1-spec.md
+         Assumption #2/#4）：postSplashScreenTheme 結束後套用回主題。 -->
+    <style name="Theme.ReadNotify.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_speaker</item>
+        <item name="postSplashScreenTheme">@style/Theme.ReadNotify</item>
+    </style>
 </resources>

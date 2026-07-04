@@ -1,0 +1,10 @@
+root = true
+
+[*.{kt,kts}]
+# Jetpack Compose 官方風格要求 @Composable function 使用 PascalCase（視為回傳 UI
+# 的「工廠函式」），與 ktlint 預設的一般函式命名規則衝突。這是 ktlint 官方文件
+# 記載的標準做法，不是關閉規則本身，只針對標註 @Composable 的函式放行。
+ktlint_function_naming_ignore_when_annotated_with = Composable
+# 與 config/detekt/detekt.yml 的 MaxLineLength 對齊，避免 ktlintFormat 與
+# detekt 對同一行的折行判斷互相矛盾（ktlint 未設定時不會主動折行過長的行）。
+max_line_length = 120
