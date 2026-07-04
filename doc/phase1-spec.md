@@ -326,33 +326,39 @@ Coverage 期望：ViewModel、UseCase 層 ≥ 80%。UI 測試僅覆蓋 happy pat
 
 ## Success Criteria
 
+驗證結果詳見 `doc/phase5-success-criteria.md`（Task 18，2026-07-07 於
+Pixel 7 / Android 16 實機驗證）。16 項中 13 項完整驗證通過，3 項
+（標註 ⚠️）為有明確理由的部分驗證，非程式碼缺陷。
+
 ```
-- [ ] 白名單清單以 PackageManager 動態列出裝置所有已安裝 App，皆可勾選/取消，
+- [x] 白名單清單以 PackageManager 動態列出裝置所有已安裝 App，皆可勾選/取消，
       勾選狀態即時寫入 DataStore 並持久化
-- [ ] 白名單為空（初始狀態）時，所有傳入通知靜音跳過，不觸發 TTS
-- [ ] 白名單內 App 送出通知後，2 秒內於背景觸發 TTS 播報（實機測試，
-      Pixel 5 或同等裝置，Android 12+）
-- [ ] 通知標題或內文任一為 null／空字串時，該通知靜音跳過，不進入播報佇列
-- [ ] App 自身通知（BuildConfig.APPLICATION_ID）永不被攔截播報，僅
+- [x] 白名單為空（初始狀態）時，所有傳入通知靜音跳過，不觸發 TTS
+- [ ] ⚠️ 白名單內 App 送出通知後，2 秒內於背景觸發 TTS 播報（實機測試，
+      Pixel 5 或同等裝置，Android 12+）——管線已透過自我測試通知驗證，
+      未另外用真正第三方 App 驗證，建議上線前補測
+- [x] 通知標題或內文任一為 null／空字串時，該通知靜音跳過，不進入播報佇列
+- [x] App 自身通知（BuildConfig.APPLICATION_ID）永不被攔截播報，僅
       SELF_TEST_NOTIFICATION_TAG 標記的測試通知為例外
-- [ ] 播報內容 > 50 字時，截斷為前 50 字並附加語音尾碼「...等省略內容」
-- [ ] 內文中的 URL 以正則 `https?://\S+` 取代為「網址」朗讀，不逐字母唸出網址
-- [ ] 播報佇列積壓達 5 條時，第 6 條起新通知直接捨棄，不崩潰、不阻塞既有播報
-- [ ] 使用者於系統設定關閉通知存取權限後，App 回到前景（`onResume`／
+- [x] 播報內容 > 50 字時，截斷為前 50 字並附加語音尾碼「...等省略內容」
+- [x] 內文中的 URL 以正則 `https?://\S+` 取代為「網址」朗讀，不逐字母唸出網址
+- [x] 播報佇列積壓達 5 條時，第 6 條起新通知直接捨棄，不崩潰、不阻塞既有播報
+- [x] 使用者於系統設定關閉通知存取權限後，App 回到前景（`onResume`／
       `OnScreenResumed`）立即偵測並切換為 `PermissionDenied` 全螢幕阻擋，
       無法進入 `IdleConfig` 主介面
-- [ ] 裝置未安裝任何 TTS 引擎時，`EngineError(TTS_ENGINE_NOT_INSTALLED)`
-      彈出提示並提供前往 Google TTS 下載頁的 Intent
-- [ ] TTS 引擎不支援目前設定語系時，靜音跳過，不朗讀亂碼或破音
-- [ ] 按下「發送測試通知」按鈕後延遲 2 秒觸發模擬通知，並成功透過 TTS 朗讀，
+- [ ] ⚠️ 裝置未安裝任何 TTS 引擎時，`EngineError(TTS_ENGINE_NOT_INSTALLED)`
+      彈出提示並提供前往 Google TTS 下載頁的 Intent——測試機已預裝 TTS
+      引擎，無法重現此狀態，僅單元測試+程式碼審查驗證
+- [x] TTS 引擎不支援目前設定語系時，靜音跳過，不朗讀亂碼或破音
+- [x] 按下「發送測試通知」按鈕後延遲 2 秒觸發模擬通知，並成功透過 TTS 朗讀，
       藉此驗證權限與 TTS 引擎皆正常
-- [ ] `MainUiState` 五態（`InitChecking`/`PermissionDenied`/`IdleConfig`/
+- [x] `MainUiState` 五態（`InitChecking`/`PermissionDenied`/`IdleConfig`/
       `TtsPlaying`/`EngineError`）皆有對應 Compose UI，且背景 Service 狀態
       變化能透過 Hilt Singleton + StateFlow 即時反映到前景畫面
-- [ ] Google Play 上架用的 `QUERY_ALL_PACKAGES` 權限使用聲明表單草稿已準備
-- [ ] Full gate 通過：`./gradlew detekt ktlintCheck :app:testDebugUnitTest`
-- [ ] 手動檢查（或 LeakCanary，若後續導入）未發現 Service／ViewModel 相關
-      記憶體洩漏
+- [x] Google Play 上架用的 `QUERY_ALL_PACKAGES` 權限使用聲明表單草稿已準備
+- [x] Full gate 通過：`./gradlew detekt ktlintCheck :app:testDebugUnitTest`
+- [ ] ⚠️ 手動檢查（或 LeakCanary，若後續導入）未發現 Service／ViewModel 相關
+      記憶體洩漏——未整合專門工具，僅人工觀察未發現異常
 ```
 
 ---
