@@ -1,0 +1,16 @@
+{
+  "skills": ["android-pr-review-optimized"],
+  "query": "幫我對目前分支建立 PR 並進行 code review，目標分支是 develop",
+  "context": "目前分支：fix/login-bug，changed_files=3，additions=45，deletions=12",
+  "expected_behavior": [
+    "詢問目標分支並確認（develop）",
+    "以 skill tool 載入 android-reviewer，確認成功後才繼續",
+    "執行 git push 並建立或沿用 PR，PR body 以 git log origin/develop..HEAD 為準",
+    "建立 session cache（pr_meta.json、head_sha.txt、base_ref.txt 等）",
+    "執行 content_mode 判斷 bash，輸出 CONTENT_MODE=A 或 B",
+    "因 changed_files=3 <= 8 且 additions+deletions=57 <= 300，跳過分層盤點，直接產生 full_diff.patch",
+    "依 android-reviewer 的 Multi-Pass strategy 執行完整 review",
+    "用 Read tool 驗證每則 inline comment 的行號，確認在 diff + 區塊",
+    "以繁體中文發布 review，event=COMMENT，寫入 review_inventory.json 後再寫 manifest.json"
+  ]
+}

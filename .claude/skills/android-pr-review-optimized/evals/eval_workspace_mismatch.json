@@ -1,0 +1,14 @@
+{
+  "skills": ["android-pr-review-optimized"],
+  "query": "幫我對目前分支建立 PR 並進行 code review，目標分支是 develop",
+  "context": "LOCAL_HEAD 與 PR_HEAD_SHA 不一致（本地有 staged 變更尚未 commit），git status --short 顯示 M app/src/main/java/Foo.kt",
+  "expected_behavior": [
+    "以 skill tool 載入 android-reviewer，確認成功後才繼續",
+    "執行 content_mode 判斷 bash，偵測到 TRACKED_CHANGES 不為空，輸出 CONTENT_MODE=B (Pinned Snapshot Mode)",
+    "不在目前工作目錄直接讀取檔案",
+    "使用 git show <PR_HEAD_SHA>:<path> 讀取 PR head 版本內容，或建立 git worktree",
+    "若建立 worktree，完成後執行 git worktree remove --force 並刪除 snapshot_dir.txt",
+    "review 結論基於 PR head 狀態，不受本地未提交的 staged 變更影響",
+    "用 Read tool 在 PR head 版本上驗證 inline comment 行號"
+  ]
+}
