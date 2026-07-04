@@ -2,6 +2,7 @@ package com.freyr.readmynotify.ui.main
 
 import com.freyr.readmynotify.domain.model.EngineErrorReason
 import com.freyr.readmynotify.domain.model.InstalledApp
+import com.freyr.readmynotify.domain.model.PlaybackState
 import com.freyr.readmynotify.domain.model.TtsEngineState
 import com.freyr.readmynotify.domain.usecase.CheckNotificationAccessUseCase
 import com.freyr.readmynotify.domain.usecase.GetInstalledAppsUseCase
@@ -12,6 +13,7 @@ import com.freyr.readmynotify.domain.usecase.ObserveWhitelistUseCase
 import com.freyr.readmynotify.domain.usecase.SendTestNotificationUseCase
 import com.freyr.readmynotify.domain.usecase.SetAppWhitelistedUseCase
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -118,6 +120,7 @@ class MainViewModelTest {
             listOf(InstalledApp("com.line", "Line"), InstalledApp("com.facebook.katana", "Facebook")),
         )
         every { observeWhitelistUseCase() } returns flowOf(setOf("com.line"))
+        every { observePlaybackStateUseCase() } returns MutableStateFlow(PlaybackState.Idle)
 
         val viewModel = createViewModel()
         advanceUntilIdle()
@@ -155,6 +158,7 @@ class MainViewModelTest {
         coEvery { initializeTtsEngineUseCase() } returns Result.success(Unit)
         coEvery { getInstalledAppsUseCase() } returns Result.success(emptyList())
         every { observeWhitelistUseCase() } returns flowOf(emptySet())
+        every { observePlaybackStateUseCase() } returns MutableStateFlow(PlaybackState.Idle)
 
         val viewModel = createViewModel()
         advanceUntilIdle()
@@ -168,31 +172,111 @@ class MainViewModelTest {
 
     // Scenario: 使用者勾選白名單 App
     @Test
-    fun `OnAppWhitelistToggled invokes SetAppWhitelistedUseCase and updates isChecked`() = runTest {
-        TODO("send OnAppWhitelistToggled(pkg, true), verify setAppWhitelistedUseCase(pkg, true) invoked, assert item.isChecked == true")
+    fun `OnAppWhitelistToggled invokes SetAppWhitelistedUseCase and updates isChecked`() = runTest(testDispatcher) {
+        val whitelistFlow = MutableStateFlow(emptySet<String>())
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } returns Result.success(Unit)
+        coEvery { getInstalledAppsUseCase() } returns Result.success(listOf(InstalledApp("com.line", "Line")))
+        every { observeWhitelistUseCase() } returns whitelistFlow
+        every { observePlaybackStateUseCase() } returns MutableStateFlow(PlaybackState.Idle)
+        coEvery { setAppWhitelistedUseCase("com.line", true) } coAnswers {
+            whitelistFlow.value = setOf("com.line")
+            Result.success(Unit)
+        }
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(MainViewIntent.OnAppWhitelistToggled("com.line", true))
+        advanceUntilIdle()
+
+        coVerify { setAppWhitelistedUseCase("com.line", true) }
+        val state = viewModel.uiState.value
+        assertTrue(state is MainUiState.IdleConfig)
+        assertTrue((state as MainUiState.IdleConfig).installedApps.first().isChecked)
     }
 
     // Scenario: 背景開始播報時前景同步顯示 TtsPlaying
     @Test
-    fun `playback Speaking state transitions to TtsPlaying`() = runTest {
-        TODO("emit PlaybackState.Speaking(appLabel) from observePlaybackStateUseCase, assert TtsPlaying(speakingFromLabel contains appLabel)")
+    fun `playback Speaking state transitions to TtsPlaying`() = runTest(testDispatcher) {
+        val playbackFlow = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } returns Result.success(Unit)
+        coEvery { getInstalledAppsUseCase() } returns Result.success(emptyList())
+        every { observeWhitelistUseCase() } returns flowOf(emptySet())
+        every { observePlaybackStateUseCase() } returns playbackFlow
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value is MainUiState.IdleConfig)
+
+        playbackFlow.value = PlaybackState.Speaking("Line")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is MainUiState.TtsPlaying)
+        assertTrue((state as MainUiState.TtsPlaying).speakingFromLabel.contains("Line"))
     }
 
     // Scenario: 播報結束後回到 IdleConfig
     @Test
-    fun `playback Idle state returns to IdleConfig`() = runTest {
-        TODO("after Speaking, emit PlaybackState.Idle, assert uiState returns to IdleConfig")
+    fun `playback Idle state returns to IdleConfig`() = runTest(testDispatcher) {
+        val playbackFlow = MutableStateFlow<PlaybackState>(PlaybackState.Speaking("Line"))
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } returns Result.success(Unit)
+        coEvery { getInstalledAppsUseCase() } returns Result.success(emptyList())
+        every { observeWhitelistUseCase() } returns flowOf(emptySet())
+        every { observePlaybackStateUseCase() } returns playbackFlow
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value is MainUiState.TtsPlaying)
+
+        playbackFlow.value = PlaybackState.Idle
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value is MainUiState.IdleConfig)
     }
 
     // Scenario: 使用者按下發送測試通知
     @Test
-    fun `OnSendTestNotificationClicked invokes SendTestNotificationUseCase exactly once`() = runTest {
-        TODO("send OnSendTestNotificationClicked, verify(exactly = 1) { sendTestNotificationUseCase() }")
+    fun `OnSendTestNotificationClicked invokes SendTestNotificationUseCase exactly once`() = runTest(testDispatcher) {
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } returns Result.success(Unit)
+        coEvery { getInstalledAppsUseCase() } returns Result.success(emptyList())
+        every { observeWhitelistUseCase() } returns flowOf(emptySet())
+        every { observePlaybackStateUseCase() } returns MutableStateFlow(PlaybackState.Idle)
+        coEvery { sendTestNotificationUseCase() } returns Result.success(Unit)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(MainViewIntent.OnSendTestNotificationClicked)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { sendTestNotificationUseCase() }
     }
 
     // Scenario: 使用者於 EngineError 狀態按下重試並成功恢復
     @Test
-    fun `OnRetryEngineInitClicked recovers from EngineError to IdleConfig`() = runTest {
-        TODO("start at EngineError, send OnRetryEngineInitClicked with initializeTtsEngineUseCase success, assert IdleConfig")
+    fun `OnRetryEngineInitClicked recovers from EngineError to IdleConfig`() = runTest(testDispatcher) {
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } returns Result.failure(IllegalStateException("no engine"))
+        every { observeEngineStateUseCase() } returns MutableStateFlow(
+            TtsEngineState.Error(EngineErrorReason.TTS_ENGINE_NOT_INSTALLED),
+        )
+        coEvery { getInstalledAppsUseCase() } returns Result.success(emptyList())
+        every { observeWhitelistUseCase() } returns flowOf(emptySet())
+        every { observePlaybackStateUseCase() } returns MutableStateFlow(PlaybackState.Idle)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value is MainUiState.EngineError)
+
+        coEvery { initializeTtsEngineUseCase() } returns Result.success(Unit)
+        viewModel.onIntent(MainViewIntent.OnRetryEngineInitClicked)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value is MainUiState.IdleConfig)
     }
 }

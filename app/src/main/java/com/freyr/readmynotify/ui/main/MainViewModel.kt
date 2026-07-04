@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.freyr.readmynotify.domain.model.EngineErrorReason
 import com.freyr.readmynotify.domain.model.InstalledApp
+import com.freyr.readmynotify.domain.model.PlaybackState
 import com.freyr.readmynotify.domain.model.TtsEngineState
 import com.freyr.readmynotify.domain.usecase.CheckNotificationAccessUseCase
 import com.freyr.readmynotify.domain.usecase.GetInstalledAppsUseCase
@@ -43,6 +44,7 @@ class MainViewModel @Inject constructor(
 
     private var installedApps: List<InstalledApp> = emptyList()
     private var whitelist: Set<String> = emptySet()
+    private var isObservingLiveUpdates = false
 
     init {
         runInitialCheck()
@@ -56,8 +58,8 @@ class MainViewModel @Inject constructor(
 
             is MainViewIntent.OnScreenResumed -> onScreenResumed()
             is MainViewIntent.OnRetryEngineInitClicked -> runInitialCheck()
-            is MainViewIntent.OnAppWhitelistToggled -> Unit // Task 9 補完
-            is MainViewIntent.OnSendTestNotificationClicked -> Unit // Task 9 補完
+            is MainViewIntent.OnAppWhitelistToggled -> onAppWhitelistToggled(intent.packageName, intent.checked)
+            is MainViewIntent.OnSendTestNotificationClicked -> onSendTestNotificationClicked()
         }
     }
 
@@ -69,6 +71,18 @@ class MainViewModel @Inject constructor(
         }
         if (_uiState.value == MainUiState.PermissionDenied) {
             runInitialCheck()
+        }
+    }
+
+    private fun onAppWhitelistToggled(packageName: String, checked: Boolean) {
+        viewModelScope.launch {
+            setAppWhitelistedUseCase(packageName, checked)
+        }
+    }
+
+    private fun onSendTestNotificationClicked() {
+        viewModelScope.launch {
+            sendTestNotificationUseCase()
         }
     }
 
@@ -89,7 +103,57 @@ class MainViewModel @Inject constructor(
 
             installedApps = getInstalledAppsUseCase().getOrDefault(emptyList())
             whitelist = observeWhitelistUseCase().firstOrNull() ?: emptySet()
-            _uiState.value = MainUiState.IdleConfig(installedApps = buildWhitelistItems())
+            _uiState.value = buildActiveState()
+
+            startObservingLiveUpdatesIfNeeded()
+        }
+    }
+
+    /**
+     * 只在第一次成功進入 IdleConfig/TtsPlaying 之後才啟動白名單／播放狀態的
+     * 持續觀察，避免在權限未授權或 TTS 未就緒時就提早訂閱不會用到的 Flow。
+     */
+    private fun startObservingLiveUpdatesIfNeeded() {
+        if (isObservingLiveUpdates) return
+        isObservingLiveUpdates = true
+        observeWhitelistChanges()
+        observePlaybackChanges()
+    }
+
+    /** 白名單變動即時反映到目前顯示中的清單（IdleConfig 或 TtsPlaying）。 */
+    private fun observeWhitelistChanges() {
+        viewModelScope.launch {
+            observeWhitelistUseCase().collect { updatedWhitelist ->
+                whitelist = updatedWhitelist
+                refreshActiveStateIfNeeded()
+            }
+        }
+    }
+
+    /** 背景播報狀態變動即時同步到前景（IdleConfig ↔ TtsPlaying）。 */
+    private fun observePlaybackChanges() {
+        viewModelScope.launch {
+            observePlaybackStateUseCase().collect {
+                refreshActiveStateIfNeeded()
+            }
+        }
+    }
+
+    private fun refreshActiveStateIfNeeded() {
+        val current = _uiState.value
+        if (current is MainUiState.IdleConfig || current is MainUiState.TtsPlaying) {
+            _uiState.value = buildActiveState()
+        }
+    }
+
+    private fun buildActiveState(): MainUiState {
+        val items = buildWhitelistItems()
+        return when (val playback = observePlaybackStateUseCase().value) {
+            is PlaybackState.Speaking -> MainUiState.TtsPlaying(
+                speakingFromLabel = "正在播報：來自 ${playback.appLabel} 的通知...",
+                installedApps = items,
+            )
+            PlaybackState.Idle -> MainUiState.IdleConfig(installedApps = items)
         }
     }
 
