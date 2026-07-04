@@ -45,11 +45,12 @@ fun MainScreen(
     // 異常矩陣：使用者中途關閉通知權限，回到前景須立即重新檢查。
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.onIntent(MainViewIntent.OnScreenResumed)
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    viewModel.onIntent(MainViewIntent.OnScreenResumed)
+                }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -75,35 +76,39 @@ internal fun MainScreenContent(
         when (uiState) {
             MainUiState.InitChecking -> InitCheckingContent()
 
-            MainUiState.PermissionDenied -> PermissionDeniedOverlay(
-                onPermissionSettingsClicked = {
-                    onIntent(MainViewIntent.OnPermissionSettingsClicked)
-                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                },
-            )
+            MainUiState.PermissionDenied ->
+                PermissionDeniedOverlay(
+                    onPermissionSettingsClicked = {
+                        onIntent(MainViewIntent.OnPermissionSettingsClicked)
+                        context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    },
+                )
 
-            is MainUiState.IdleConfig -> IdleConfigContent(
-                installedApps = uiState.installedApps,
-                onIntent = onIntent,
-            )
-
-            is MainUiState.TtsPlaying -> Column(modifier = Modifier.fillMaxSize()) {
-                TtsPlayingBanner(speakingFromLabel = uiState.speakingFromLabel)
+            is MainUiState.IdleConfig ->
                 IdleConfigContent(
                     installedApps = uiState.installedApps,
                     onIntent = onIntent,
-                    modifier = Modifier.weight(1f),
                 )
-            }
 
-            is MainUiState.EngineError -> EngineErrorDialog(
-                reason = uiState.reason,
-                onInstallTtsEngineClicked = {
-                    onIntent(MainViewIntent.OnInstallTtsEngineClicked)
-                    context.startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA))
-                },
-                onRetryClicked = { onIntent(MainViewIntent.OnRetryEngineInitClicked) },
-            )
+            is MainUiState.TtsPlaying ->
+                Column(modifier = Modifier.fillMaxSize()) {
+                    TtsPlayingBanner(speakingFromLabel = uiState.speakingFromLabel)
+                    IdleConfigContent(
+                        installedApps = uiState.installedApps,
+                        onIntent = onIntent,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+            is MainUiState.EngineError ->
+                EngineErrorDialog(
+                    reason = uiState.reason,
+                    onInstallTtsEngineClicked = {
+                        onIntent(MainViewIntent.OnInstallTtsEngineClicked)
+                        context.startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA))
+                    },
+                    onRetryClicked = { onIntent(MainViewIntent.OnRetryEngineInitClicked) },
+                )
         }
     }
 }
@@ -144,9 +149,10 @@ private fun IdleConfigContent(
         }
         Button(
             onClick = { onIntent(MainViewIntent.OnSendTestNotificationClicked) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
         ) {
             Text("發送測試通知")
         }

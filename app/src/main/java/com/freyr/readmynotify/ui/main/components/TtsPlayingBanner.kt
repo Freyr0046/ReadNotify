@@ -20,7 +20,10 @@ import androidx.compose.ui.unit.dp
  * PRD 3. UI 狀態機 TTS_PLAYING：動態顯示「正在播報：來自 XXX 的通知...」。
  */
 @Composable
-fun TtsPlayingBanner(speakingFromLabel: String, modifier: Modifier = Modifier) {
+fun TtsPlayingBanner(
+    speakingFromLabel: String,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primaryContainer,

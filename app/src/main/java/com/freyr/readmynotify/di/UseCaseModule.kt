@@ -28,26 +28,17 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class UseCaseModule {
+    @Binds
+    abstract fun bindBuildAnnouncementUseCase(impl: BuildAnnouncementUseCaseImpl): BuildAnnouncementUseCase
 
     @Binds
-    abstract fun bindBuildAnnouncementUseCase(
-        impl: BuildAnnouncementUseCaseImpl,
-    ): BuildAnnouncementUseCase
+    abstract fun bindObserveWhitelistUseCase(impl: ObserveWhitelistUseCaseImpl): ObserveWhitelistUseCase
 
     @Binds
-    abstract fun bindObserveWhitelistUseCase(
-        impl: ObserveWhitelistUseCaseImpl,
-    ): ObserveWhitelistUseCase
+    abstract fun bindSetAppWhitelistedUseCase(impl: SetAppWhitelistedUseCaseImpl): SetAppWhitelistedUseCase
 
     @Binds
-    abstract fun bindSetAppWhitelistedUseCase(
-        impl: SetAppWhitelistedUseCaseImpl,
-    ): SetAppWhitelistedUseCase
-
-    @Binds
-    abstract fun bindGetInstalledAppsUseCase(
-        impl: GetInstalledAppsUseCaseImpl,
-    ): GetInstalledAppsUseCase
+    abstract fun bindGetInstalledAppsUseCase(impl: GetInstalledAppsUseCaseImpl): GetInstalledAppsUseCase
 
     @Binds
     abstract fun bindCheckNotificationAccessUseCase(
@@ -55,27 +46,17 @@ abstract class UseCaseModule {
     ): CheckNotificationAccessUseCase
 
     @Binds
-    abstract fun bindInitializeTtsEngineUseCase(
-        impl: InitializeTtsEngineUseCaseImpl,
-    ): InitializeTtsEngineUseCase
+    abstract fun bindInitializeTtsEngineUseCase(impl: InitializeTtsEngineUseCaseImpl): InitializeTtsEngineUseCase
 
     @Binds
-    abstract fun bindObserveEngineStateUseCase(
-        impl: ObserveEngineStateUseCaseImpl,
-    ): ObserveEngineStateUseCase
+    abstract fun bindObserveEngineStateUseCase(impl: ObserveEngineStateUseCaseImpl): ObserveEngineStateUseCase
 
     @Binds
-    abstract fun bindEnqueueAnnouncementUseCase(
-        impl: EnqueueAnnouncementUseCaseImpl,
-    ): EnqueueAnnouncementUseCase
+    abstract fun bindEnqueueAnnouncementUseCase(impl: EnqueueAnnouncementUseCaseImpl): EnqueueAnnouncementUseCase
 
     @Binds
-    abstract fun bindObservePlaybackStateUseCase(
-        impl: ObservePlaybackStateUseCaseImpl,
-    ): ObservePlaybackStateUseCase
+    abstract fun bindObservePlaybackStateUseCase(impl: ObservePlaybackStateUseCaseImpl): ObservePlaybackStateUseCase
 
     @Binds
-    abstract fun bindSendTestNotificationUseCase(
-        impl: SendTestNotificationUseCaseImpl,
-    ): SendTestNotificationUseCase
+    abstract fun bindSendTestNotificationUseCase(impl: SendTestNotificationUseCaseImpl): SendTestNotificationUseCase
 }

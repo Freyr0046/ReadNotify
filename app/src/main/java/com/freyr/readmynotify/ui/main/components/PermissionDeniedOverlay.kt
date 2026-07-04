@@ -27,9 +27,10 @@ fun PermissionDeniedOverlay(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.Center,
     ) {
         Column(

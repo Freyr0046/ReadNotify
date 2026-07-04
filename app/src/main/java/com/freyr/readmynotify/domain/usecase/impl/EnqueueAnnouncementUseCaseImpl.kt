@@ -5,9 +5,10 @@ import com.freyr.readmynotify.domain.repository.SpeechQueueRepository
 import com.freyr.readmynotify.domain.usecase.EnqueueAnnouncementUseCase
 import javax.inject.Inject
 
-class EnqueueAnnouncementUseCaseImpl @Inject constructor(
-    private val repository: SpeechQueueRepository,
-) : EnqueueAnnouncementUseCase {
-
-    override suspend fun invoke(announcement: Announcement): Result<Unit> = repository.enqueue(announcement)
-}
+class EnqueueAnnouncementUseCaseImpl
+    @Inject
+    constructor(
+        private val repository: SpeechQueueRepository,
+    ) : EnqueueAnnouncementUseCase {
+        override suspend fun invoke(announcement: Announcement): Result<Unit> = repository.enqueue(announcement)
+    }

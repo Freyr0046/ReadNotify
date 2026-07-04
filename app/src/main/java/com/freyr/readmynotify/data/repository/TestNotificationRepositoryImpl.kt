@@ -12,35 +12,39 @@ import com.freyr.readmynotify.domain.repository.TestNotificationRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
-class TestNotificationRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
-) : TestNotificationRepository {
+class TestNotificationRepositoryImpl
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) : TestNotificationRepository {
+        override suspend fun postTestNotification(): Result<Unit> =
+            runCatching {
+                ensureChannelExists()
 
-    override suspend fun postTestNotification(): Result<Unit> = runCatching {
-        ensureChannelExists()
+                val notification =
+                    NotificationCompat.Builder(context, SelfTestNotification.CHANNEL_ID)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("ReadNotify 測試")
+                        .setContentText("這是一則測試通知，用來確認播報功能是否正常運作")
+                        .setCategory(Notification.CATEGORY_MESSAGE)
+                        .setAutoCancel(true)
+                        .build()
 
-        val notification = NotificationCompat.Builder(context, SelfTestNotification.CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("ReadNotify 測試")
-            .setContentText("這是一則測試通知，用來確認播報功能是否正常運作")
-            .setCategory(Notification.CATEGORY_MESSAGE)
-            .setAutoCancel(true)
-            .build()
+                NotificationManagerCompat.from(context).notify(
+                    SelfTestNotification.TAG,
+                    SelfTestNotification.NOTIFICATION_ID,
+                    notification,
+                )
+            }
 
-        NotificationManagerCompat.from(context).notify(
-            SelfTestNotification.TAG,
-            SelfTestNotification.NOTIFICATION_ID,
-            notification,
-        )
+        private fun ensureChannelExists() {
+            val channel =
+                NotificationChannel(
+                    SelfTestNotification.CHANNEL_ID,
+                    "自我測試通知",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                )
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
     }
-
-    private fun ensureChannelExists() {
-        val channel = NotificationChannel(
-            SelfTestNotification.CHANNEL_ID,
-            "自我測試通知",
-            NotificationManager.IMPORTANCE_DEFAULT,
-        )
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.createNotificationChannel(channel)
-    }
-}

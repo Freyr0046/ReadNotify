@@ -6,9 +6,10 @@ import com.freyr.readmynotify.domain.usecase.ObservePlaybackStateUseCase
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
-class ObservePlaybackStateUseCaseImpl @Inject constructor(
-    private val repository: SpeechQueueRepository,
-) : ObservePlaybackStateUseCase {
-
-    override fun invoke(): StateFlow<PlaybackState> = repository.playbackState
-}
+class ObservePlaybackStateUseCaseImpl
+    @Inject
+    constructor(
+        private val repository: SpeechQueueRepository,
+    ) : ObservePlaybackStateUseCase {
+        override fun invoke(): StateFlow<PlaybackState> = repository.playbackState
+    }

@@ -6,10 +6,12 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class BuildAnnouncementUseCaseImplTest {
-
     private val useCase = BuildAnnouncementUseCaseImpl()
 
-    private fun notification(title: String?, content: String?) = IncomingNotification(
+    private fun notification(
+        title: String?,
+        content: String?,
+    ) = IncomingNotification(
         packageName = "com.example.line",
         title = title,
         content = content,

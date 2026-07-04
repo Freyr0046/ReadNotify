@@ -25,7 +25,6 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class NotificationService : NotificationListenerService() {
-
     @Inject
     lateinit var buildAnnouncementUseCase: BuildAnnouncementUseCase
 
@@ -62,14 +61,15 @@ class NotificationService : NotificationListenerService() {
         }
 
         val extras: Bundle = sbn.notification?.extras ?: return
-        val incomingNotification = IncomingNotification(
-            packageName = packageName,
-            title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString(),
-            content = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString(),
-            groupName = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString(),
-            category = sbn.notification?.category,
-            tag = sbn.tag,
-        )
+        val incomingNotification =
+            IncomingNotification(
+                packageName = packageName,
+                title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString(),
+                content = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString(),
+                groupName = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString(),
+                category = sbn.notification?.category,
+                tag = sbn.tag,
+            )
 
         val appLabel = resolveAppLabel(packageName)
         val announcement = buildAnnouncementUseCase(appLabel, incomingNotification) ?: return
@@ -79,10 +79,11 @@ class NotificationService : NotificationListenerService() {
         }
     }
 
-    private fun resolveAppLabel(packageName: String): String = runCatching {
-        val appInfo = packageManager.getApplicationInfo(packageName, 0)
-        packageManager.getApplicationLabel(appInfo).toString()
-    }.getOrDefault(packageName)
+    private fun resolveAppLabel(packageName: String): String =
+        runCatching {
+            val appInfo = packageManager.getApplicationInfo(packageName, 0)
+            packageManager.getApplicationLabel(appInfo).toString()
+        }.getOrDefault(packageName)
 
     override fun onDestroy() {
         super.onDestroy()

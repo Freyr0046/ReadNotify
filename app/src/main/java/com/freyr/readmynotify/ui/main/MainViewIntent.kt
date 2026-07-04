@@ -2,7 +2,6 @@ package com.freyr.readmynotify.ui.main
 
 // LOCKED — do not modify during Phase 5
 sealed interface MainViewIntent {
-
     /** 前往系統通知存取權限設定頁 */
     data object OnPermissionSettingsClicked : MainViewIntent
 

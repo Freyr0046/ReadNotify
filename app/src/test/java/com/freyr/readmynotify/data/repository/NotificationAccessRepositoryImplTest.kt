@@ -13,12 +13,12 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class NotificationAccessRepositoryImplTest {
-
     private val contentResolver = mockk<ContentResolver>()
-    private val context = mockk<Context> {
-        every { packageName } returns "com.freyr.readnotify"
-        every { contentResolver } returns this@NotificationAccessRepositoryImplTest.contentResolver
-    }
+    private val context =
+        mockk<Context> {
+            every { packageName } returns "com.freyr.readnotify"
+            every { contentResolver } returns this@NotificationAccessRepositoryImplTest.contentResolver
+        }
 
     @AfterEach
     fun tearDown() {

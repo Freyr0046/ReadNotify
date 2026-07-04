@@ -34,15 +34,17 @@ fun AppWhitelistRow(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val icon = remember(item.packageName) {
-        runCatching { context.packageManager.getApplicationIcon(item.packageName) }.getOrNull()
-    }
+    val icon =
+        remember(item.packageName) {
+            runCatching { context.packageManager.getApplicationIcon(item.packageName) }.getOrNull()
+        }
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onToggle(item.packageName, !item.isChecked) }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable { onToggle(item.packageName, !item.isChecked) }
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {

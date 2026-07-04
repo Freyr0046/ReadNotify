@@ -18,9 +18,9 @@ private val Context.whitelistDataStore: DataStore<Preferences> by preferencesDat
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
-
     @Provides
     @Singleton
-    fun provideWhitelistDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        context.whitelistDataStore
+    fun provideWhitelistDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> = context.whitelistDataStore
 }

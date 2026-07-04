@@ -20,38 +20,40 @@ import javax.inject.Singleton
  * （PRD 異常矩陣：連續 20 條群發時，佇列最多積壓 5 條，超過直接捨棄）。
  */
 @Singleton
-class SpeechQueueRepositoryImpl @Inject constructor(
-    private val ttsEngineRepository: TtsEngineRepository,
-    @ApplicationCoroutineScope scope: CoroutineScope,
-) : SpeechQueueRepository {
+class SpeechQueueRepositoryImpl
+    @Inject
+    constructor(
+        private val ttsEngineRepository: TtsEngineRepository,
+        @ApplicationCoroutineScope scope: CoroutineScope,
+    ) : SpeechQueueRepository {
+        private val _playbackState = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
+        override val playbackState: StateFlow<PlaybackState> = _playbackState
 
-    private val _playbackState = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
-    override val playbackState: StateFlow<PlaybackState> = _playbackState
+        private val channel =
+            Channel<Announcement>(
+                capacity = MAX_QUEUE_SIZE,
+                onBufferOverflow = BufferOverflow.DROP_LATEST,
+            )
 
-    private val channel = Channel<Announcement>(
-        capacity = MAX_QUEUE_SIZE,
-        onBufferOverflow = BufferOverflow.DROP_LATEST,
-    )
-
-    init {
-        scope.launch {
-            for (announcement in channel) {
-                _playbackState.value = PlaybackState.Speaking(announcement.appLabel)
-                ttsEngineRepository.speak(
-                    text = announcement.message,
-                    utteranceId = "${announcement.appLabel}-${announcement.hashCode()}",
-                )
-                _playbackState.value = PlaybackState.Idle
+        init {
+            scope.launch {
+                for (announcement in channel) {
+                    _playbackState.value = PlaybackState.Speaking(announcement.appLabel)
+                    ttsEngineRepository.speak(
+                        text = announcement.message,
+                        utteranceId = "${announcement.appLabel}-${announcement.hashCode()}",
+                    )
+                    _playbackState.value = PlaybackState.Idle
+                }
             }
         }
-    }
 
-    override suspend fun enqueue(announcement: Announcement): Result<Unit> {
-        channel.trySend(announcement)
-        return Result.success(Unit)
-    }
+        override suspend fun enqueue(announcement: Announcement): Result<Unit> {
+            channel.trySend(announcement)
+            return Result.success(Unit)
+        }
 
-    private companion object {
-        const val MAX_QUEUE_SIZE = 5
+        private companion object {
+            const val MAX_QUEUE_SIZE = 5
+        }
     }
-}

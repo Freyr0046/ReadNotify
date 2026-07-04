@@ -13,5 +13,8 @@ interface TtsEngineRepository {
      * 語系不支援時回傳 Result.failure；呼叫端必須靜音跳過，
      * 絕不可將錯誤 externalize 為 crash 或亂碼朗讀。
      */
-    suspend fun speak(text: String, utteranceId: String): Result<Unit>
+    suspend fun speak(
+        text: String,
+        utteranceId: String,
+    ): Result<Unit>
 }

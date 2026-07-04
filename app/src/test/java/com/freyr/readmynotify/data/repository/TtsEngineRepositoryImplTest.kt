@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test
  * 邏輯）撰寫單元測試，完整的初始化/語系流程於 Task 18 手動實機驗證。
  */
 class TtsEngineRepositoryImplTest {
-
     @Test
     fun `SUCCESS status maps to no error`() {
         assertNull(mapInitStatusToErrorReason(TextToSpeech.SUCCESS))

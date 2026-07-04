@@ -17,7 +17,6 @@ import org.junit.Test
  * 不透過真正的 Hilt ViewModel。
  */
 class MainScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -64,10 +63,11 @@ class MainScreenTest {
     fun ttsPlaying_showsSpeakingBanner() {
         composeTestRule.setContent {
             MainScreenContent(
-                uiState = MainUiState.TtsPlaying(
-                    speakingFromLabel = "正在播報：來自 Line 的通知...",
-                    installedApps = emptyList(),
-                ),
+                uiState =
+                    MainUiState.TtsPlaying(
+                        speakingFromLabel = "正在播報：來自 Line 的通知...",
+                        installedApps = emptyList(),
+                    ),
                 onIntent = {},
             )
         }

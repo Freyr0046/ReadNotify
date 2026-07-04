@@ -4,7 +4,6 @@ import com.freyr.readmynotify.domain.model.EngineErrorReason
 
 // LOCKED — do not modify during Phase 5
 sealed interface MainUiState {
-
     /** App 啟動時，檢查通知存取權限與 TTS 引擎可用性 */
     data object InitChecking : MainUiState
 

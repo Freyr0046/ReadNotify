@@ -20,34 +20,23 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
-
     @Binds
     abstract fun bindNotificationWhitelistRepository(
         impl: NotificationWhitelistRepositoryImpl,
     ): NotificationWhitelistRepository
 
     @Binds
-    abstract fun bindInstalledAppRepository(
-        impl: InstalledAppRepositoryImpl,
-    ): InstalledAppRepository
+    abstract fun bindInstalledAppRepository(impl: InstalledAppRepositoryImpl): InstalledAppRepository
 
     @Binds
-    abstract fun bindNotificationAccessRepository(
-        impl: NotificationAccessRepositoryImpl,
-    ): NotificationAccessRepository
+    abstract fun bindNotificationAccessRepository(impl: NotificationAccessRepositoryImpl): NotificationAccessRepository
 
     @Binds
-    abstract fun bindTtsEngineRepository(
-        impl: TtsEngineRepositoryImpl,
-    ): TtsEngineRepository
+    abstract fun bindTtsEngineRepository(impl: TtsEngineRepositoryImpl): TtsEngineRepository
 
     @Binds
-    abstract fun bindSpeechQueueRepository(
-        impl: SpeechQueueRepositoryImpl,
-    ): SpeechQueueRepository
+    abstract fun bindSpeechQueueRepository(impl: SpeechQueueRepositoryImpl): SpeechQueueRepository
 
     @Binds
-    abstract fun bindTestNotificationRepository(
-        impl: TestNotificationRepositoryImpl,
-    ): TestNotificationRepository
+    abstract fun bindTestNotificationRepository(impl: TestNotificationRepositoryImpl): TestNotificationRepository
 }

@@ -13,30 +13,31 @@ import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SendTestNotificationUseCaseImplTest {
+    @Test
+    fun `invoke waits 2 seconds before posting the test notification`() =
+        runTest {
+            val repository = mockk<TestNotificationRepository>()
+            coEvery { repository.postTestNotification() } returns Result.success(Unit)
+            val useCase = SendTestNotificationUseCaseImpl(repository)
+
+            val result = useCase()
+
+            assertEquals(2000L, currentTime)
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { repository.postTestNotification() }
+        }
 
     @Test
-    fun `invoke waits 2 seconds before posting the test notification`() = runTest {
-        val repository = mockk<TestNotificationRepository>()
-        coEvery { repository.postTestNotification() } returns Result.success(Unit)
-        val useCase = SendTestNotificationUseCaseImpl(repository)
+    fun `invoke propagates repository failure`() =
+        runTest {
+            val repository = mockk<TestNotificationRepository>()
+            val failure = IllegalStateException("no permission")
+            coEvery { repository.postTestNotification() } returns Result.failure(failure)
+            val useCase = SendTestNotificationUseCaseImpl(repository)
 
-        val result = useCase()
+            val result = useCase()
 
-        assertEquals(2000L, currentTime)
-        assertTrue(result.isSuccess)
-        coVerify(exactly = 1) { repository.postTestNotification() }
-    }
-
-    @Test
-    fun `invoke propagates repository failure`() = runTest {
-        val repository = mockk<TestNotificationRepository>()
-        val failure = IllegalStateException("no permission")
-        coEvery { repository.postTestNotification() } returns Result.failure(failure)
-        val useCase = SendTestNotificationUseCaseImpl(repository)
-
-        val result = useCase()
-
-        assertTrue(result.isFailure)
-        assertEquals(failure, result.exceptionOrNull())
-    }
+            assertTrue(result.isFailure)
+            assertEquals(failure, result.exceptionOrNull())
+        }
 }

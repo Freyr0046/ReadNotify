@@ -1,0 +1,33 @@
+# 疊加在 detekt 預設規則集之上（app/build.gradle 已設定
+# buildUponDefaultConfig = true），只針對 Jetpack Compose 慣例與本專案
+# 已確認的架構決策做必要調整，不關閉任何規則。
+
+complexity:
+  LongParameterList:
+    # MainViewModel 建構子是 doc/phase3-contract-lock.md 鎖定的合約，
+    # 8 個 UseCase 依賴為聚合單一畫面業務邏輯所需，不可縮減參數數量。
+    constructorThreshold: 10
+  TooManyFunctions:
+    # MainViewModel 完整實作後有 11 個函式（含 8 個 onIntent 分支的私有
+    # handler），符合單一畫面狀態機的合理複雜度。
+    thresholdInClasses: 12
+
+style:
+  ReturnCount:
+    # NotificationService.onNotificationPosted 使用 guard clause 提早
+    # return（空值/自我黑名單/白名單三層防禦檢查），比巢狀 if-else 更易讀，
+    # 符合 PRD 3.1.1 的防禦性設計要求。
+    max: 4
+  ForbiddenComment:
+    active: true
+  UnusedPrivateMember:
+    # @Preview 函式只給 Android Studio 預覽工具呼叫，不會被專案程式碼引用，
+    # 是 Compose 專案的標準 detekt 設定。
+    ignoreAnnotated: ['Preview']
+
+naming:
+  FunctionNaming:
+    # Jetpack Compose 官方風格要求 @Composable 函式使用 PascalCase
+    # （視為回傳 UI 的工廠函式），與一般函式命名規則衝突，是官方文件記載的
+    # 標準例外設定。
+    ignoreAnnotated: ['Composable']
