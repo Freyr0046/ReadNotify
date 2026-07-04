@@ -1,0 +1,20 @@
+{
+  "skill_name": "android-api-integration",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "根據以下 API Spec 幫我完成 apiService 和 repository：\n\ngetMemberCouponList\n會員優惠券列表\n\nHTTP Request\nPost /member/getMemberCouponList\n\nQuery Parameters\nParameter    Type    Description    Require\nmember_id    string    會員代號    ✔\naccess_token string             ✔\ncoupon_type  int      0:全部 1:未使用 2:已使用 3:已過期\n\nResponse data\nParameter    Type    Description\ncoupon_list\n[\n  coupon_id    int64   優惠券流水號\n  coupon_name  string  優惠券名稱\n  coupon_code  string  優惠券代碼\n  expire_date  string  到期日 (yyyy-MM-dd)\n  coupon_type  int     1:未使用 2:已使用 3:已過期\n  discount_amt int     折扣金額\n]",
+      "expected_output": "1. 建立 MemberCouponListInfo.kt 含 MemberCouponListInfo 和 MemberCouponItem 兩個 data class，欄位對應 spec，型別正確（int64→Long, int→Int, string→String）\n2. 在 MonsterApiService.kt 新增 @POST(\"v2/member/getMemberCouponList\") suspend fun getMemberCouponList\n3. 在 InvoiceRepository.kt 或對應 Repository 新增 getMemberCouponList 方法，body 含 member_id、access_token、coupon_type，使用 apiManager.requestOnIoThread + toEncryptedRequestObject"
+    },
+    {
+      "id": 2,
+      "prompt": "以下是 API spec，請替我完成 apiService 和 repository：\n\ngetInvoicePeriodList\n取得開獎期別列表\n\nPost /invoice/getInvoicePeriodList\n\nParameters:\nmember_id    string    ✔\naccess_token string    ✔\n\nResponse:\nperiod_list\n[\n  inv_period   string  開獎期別 (ex: 11412)\n  start_date   string  期別起始日\n  end_date     string  期別結束日\n  is_announced int     0:未開獎 1:已開獎\n]",
+      "expected_output": "1. 建立 InvoicePeriodListInfo.kt，含正確的 data class 和 @SerializedName\n2. MonsterApiService 新增 getInvoicePeriodList endpoint\n3. Repository 新增對應的 suspend fun，參數和 body key 與 spec 一致"
+    },
+    {
+      "id": 3,
+      "prompt": "API Spec 如下，請完成 apiService 和 repository：\n\nupdateMemberPushSetting\n更新會員推播設定\n\nPOST /member/updateMemberPushSetting\n\nRequest:\nmember_id       string  ✔\naccess_token    string  ✔\npush_enabled    int     0:關閉 1:開啟  ✔\npush_type       int     1:行銷 2:交易  ✔\n\nResponse:\nsuccess    boolean  是否成功",
+      "expected_output": "1. 建立 UpdateMemberPushSettingInfo.kt，response 是單一 Boolean 包裝或 data class\n2. MonsterApiService 新增 updateMemberPushSetting endpoint\n3. Repository 新增方法，body 包含 member_id、access_token、push_enabled、push_type"
+    }
+  ]
+}

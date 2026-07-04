@@ -1,0 +1,17 @@
+{
+  "skills": ["android-pr-review-optimized"],
+  "query": "幫我對目前分支建立 PR 並進行 code review，目標分支是 develop",
+  "context": "目前分支：feature/refactor-payment，changed_files=18，additions=520，deletions=310，含 PaymentViewModel.kt、PaymentFragment.kt、PaymentRepository.kt 等高風險檔",
+  "expected_behavior": [
+    "詢問目標分支並確認（develop）",
+    "以 skill tool 載入 android-reviewer，確認成功後才繼續",
+    "執行 git push 並建立或沿用 PR",
+    "建立 session cache，使用 jq 從 pr_meta.json 取 head_sha 與 base_ref",
+    "執行 content_mode 判斷 bash，輸出 CONTENT_MODE=A 或 B",
+    "因 changed_files=18 > 8，進入分層盤點（Step 4-2），將 *ViewModel.kt / *Fragment.kt / *Repository.kt 標記為 high_risk",
+    "對高風險檔案讀完整內容並建立 per-file patch（patches/ 目錄）",
+    "對低風險檔案做 lightweight review",
+    "review_inventory.json 中 files_reviewed 涵蓋所有 18 個 changed files，每個有 depth 欄位",
+    "以繁體中文發布 review，Coverage Notes 列出深度審查 / 輕量審查清單，event=COMMENT"
+  ]
+}
