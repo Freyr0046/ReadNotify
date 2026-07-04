@@ -35,6 +35,10 @@ class NotificationService : NotificationListenerService() {
     lateinit var observeWhitelistUseCase: ObserveWhitelistUseCase
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    // 由 serviceScope（Dispatchers.Default）寫入，onNotificationPosted 在
+    // 主執行緒讀取；@Volatile 確保跨執行緒可見性，避免讀到過期的白名單。
+    @Volatile
     private var whitelist: Set<String> = emptySet()
 
     override fun onCreate() {

@@ -44,6 +44,11 @@ class TtsEngineRepositoryImpl
 
         override suspend fun initialize(): Result<Unit> =
             runCatching {
+                // runInitialCheck() 在每次重新檢查（重試、權限恢復）都會呼叫這裡，
+                // 若不先關閉舊的引擎連線，重複初始化會累積洩漏底層 TTS 服務綁定。
+                textToSpeech?.shutdown()
+                textToSpeech = null
+
                 suspendCancellableCoroutine { continuation ->
                     lateinit var tts: TextToSpeech
                     tts =
