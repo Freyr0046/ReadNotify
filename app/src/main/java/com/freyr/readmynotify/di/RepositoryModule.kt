@@ -1,8 +1,10 @@
 package com.freyr.readmynotify.di
 
 import com.freyr.readmynotify.data.repository.InstalledAppRepositoryImpl
+import com.freyr.readmynotify.data.repository.NotificationAccessRepositoryImpl
 import com.freyr.readmynotify.data.repository.NotificationWhitelistRepositoryImpl
 import com.freyr.readmynotify.domain.repository.InstalledAppRepository
+import com.freyr.readmynotify.domain.repository.NotificationAccessRepository
 import com.freyr.readmynotify.domain.repository.NotificationWhitelistRepository
 import dagger.Binds
 import dagger.Module
@@ -22,4 +24,9 @@ abstract class RepositoryModule {
     abstract fun bindInstalledAppRepository(
         impl: InstalledAppRepositoryImpl,
     ): InstalledAppRepository
+
+    @Binds
+    abstract fun bindNotificationAccessRepository(
+        impl: NotificationAccessRepositoryImpl,
+    ): NotificationAccessRepository
 }

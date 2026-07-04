@@ -1,10 +1,12 @@
 package com.freyr.readmynotify.di
 
 import com.freyr.readmynotify.domain.usecase.BuildAnnouncementUseCase
+import com.freyr.readmynotify.domain.usecase.CheckNotificationAccessUseCase
 import com.freyr.readmynotify.domain.usecase.GetInstalledAppsUseCase
 import com.freyr.readmynotify.domain.usecase.ObserveWhitelistUseCase
 import com.freyr.readmynotify.domain.usecase.SetAppWhitelistedUseCase
 import com.freyr.readmynotify.domain.usecase.impl.BuildAnnouncementUseCaseImpl
+import com.freyr.readmynotify.domain.usecase.impl.CheckNotificationAccessUseCaseImpl
 import com.freyr.readmynotify.domain.usecase.impl.GetInstalledAppsUseCaseImpl
 import com.freyr.readmynotify.domain.usecase.impl.ObserveWhitelistUseCaseImpl
 import com.freyr.readmynotify.domain.usecase.impl.SetAppWhitelistedUseCaseImpl
@@ -36,4 +38,9 @@ abstract class UseCaseModule {
     abstract fun bindGetInstalledAppsUseCase(
         impl: GetInstalledAppsUseCaseImpl,
     ): GetInstalledAppsUseCase
+
+    @Binds
+    abstract fun bindCheckNotificationAccessUseCase(
+        impl: CheckNotificationAccessUseCaseImpl,
+    ): CheckNotificationAccessUseCase
 }
