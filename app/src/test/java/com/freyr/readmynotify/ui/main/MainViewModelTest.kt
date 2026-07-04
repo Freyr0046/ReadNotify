@@ -1,5 +1,8 @@
 package com.freyr.readmynotify.ui.main
 
+import com.freyr.readmynotify.domain.model.EngineErrorReason
+import com.freyr.readmynotify.domain.model.InstalledApp
+import com.freyr.readmynotify.domain.model.TtsEngineState
 import com.freyr.readmynotify.domain.usecase.CheckNotificationAccessUseCase
 import com.freyr.readmynotify.domain.usecase.GetInstalledAppsUseCase
 import com.freyr.readmynotify.domain.usecase.InitializeTtsEngineUseCase
@@ -8,8 +11,24 @@ import com.freyr.readmynotify.domain.usecase.ObservePlaybackStateUseCase
 import com.freyr.readmynotify.domain.usecase.ObserveWhitelistUseCase
 import com.freyr.readmynotify.domain.usecase.SendTestNotificationUseCase
 import com.freyr.readmynotify.domain.usecase.SetAppWhitelistedUseCase
+import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 /**
@@ -20,8 +39,18 @@ import org.junit.jupiter.api.Test
  * real assertions against a fully implemented [MainViewModel]. If a stub
  * seems wrong during implementation, escalate (Phase 6) — do not edit it to
  * match the implementation.
+ *
+ * Phase 5 addendum (Task 8/9): `viewModelScope` dispatches on
+ * `Dispatchers.Main`, so a shared [StandardTestDispatcher] is installed as
+ * Main via [BeforeEach]/[AfterEach] and passed into every `runTest(...)`
+ * call — this is test-infrastructure wiring, not a change to what each
+ * scenario asserts, and was necessary to make the locked stubs executable
+ * against a real ViewModel.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
 
     private val checkNotificationAccessUseCase: CheckNotificationAccessUseCase = mockk()
     private val initializeTtsEngineUseCase: InitializeTtsEngineUseCase = mockk()
@@ -31,6 +60,16 @@ class MainViewModelTest {
     private val observeWhitelistUseCase: ObserveWhitelistUseCase = mockk()
     private val setAppWhitelistedUseCase: SetAppWhitelistedUseCase = mockk()
     private val sendTestNotificationUseCase: SendTestNotificationUseCase = mockk()
+
+    @BeforeEach
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     private fun createViewModel(): MainViewModel = MainViewModel(
         checkNotificationAccessUseCase = checkNotificationAccessUseCase,
@@ -45,32 +84,86 @@ class MainViewModelTest {
 
     // Scenario: App 啟動時進入初始化檢查
     @Test
-    fun `initial state is InitChecking`() = runTest {
-        TODO("assert createViewModel().uiState.value is MainUiState.InitChecking before any check completes")
+    fun `initial state is InitChecking`() = runTest(testDispatcher) {
+        // checkNotificationAccessUseCase()（非 suspend）會同步跑完，但
+        // initializeTtsEngineUseCase() 是真正的 suspend（等待非同步系統回呼），
+        // 在它 resume 之前，UiState 應停留在 InitChecking —— 與正式環境中
+        // TTS OnInitListener 尚未回呼前的行為一致。
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } coAnswers { awaitCancellation() }
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(MainUiState.InitChecking, viewModel.uiState.value)
     }
 
     // Scenario: 初始化檢查後偵測到未授權通知存取權限
     @Test
-    fun `permission denied transitions to PermissionDenied`() = runTest {
-        TODO("mock checkNotificationAccessUseCase() = false, assert uiState becomes PermissionDenied")
+    fun `permission denied transitions to PermissionDenied`() = runTest(testDispatcher) {
+        every { checkNotificationAccessUseCase() } returns false
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(MainUiState.PermissionDenied, viewModel.uiState.value)
     }
 
     // Scenario: 初始化檢查後偵測到權限已授權且 TTS 就緒
     @Test
-    fun `permission granted and tts ready transitions to IdleConfig`() = runTest {
-        TODO("mock access=true + initializeTtsEngineUseCase success, assert IdleConfig with installed apps + whitelist merged")
+    fun `permission granted and tts ready transitions to IdleConfig`() = runTest(testDispatcher) {
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } returns Result.success(Unit)
+        coEvery { getInstalledAppsUseCase() } returns Result.success(
+            listOf(InstalledApp("com.line", "Line"), InstalledApp("com.facebook.katana", "Facebook")),
+        )
+        every { observeWhitelistUseCase() } returns flowOf(setOf("com.line"))
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is MainUiState.IdleConfig)
+        val idleConfig = state as MainUiState.IdleConfig
+        assertEquals(2, idleConfig.installedApps.size)
+        assertTrue(idleConfig.installedApps.first { it.packageName == "com.line" }.isChecked)
+        assertFalse(idleConfig.installedApps.first { it.packageName == "com.facebook.katana" }.isChecked)
     }
 
     // Scenario: TTS 引擎初始化失敗（未安裝引擎）
     @Test
-    fun `tts engine not installed transitions to EngineError`() = runTest {
-        TODO("mock initializeTtsEngineUseCase() = Result.failure(TTS_ENGINE_NOT_INSTALLED), assert EngineError(reason)")
+    fun `tts engine not installed transitions to EngineError`() = runTest(testDispatcher) {
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } returns Result.failure(IllegalStateException("no engine"))
+        every { observeEngineStateUseCase() } returns MutableStateFlow(
+            TtsEngineState.Error(EngineErrorReason.TTS_ENGINE_NOT_INSTALLED),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(
+            MainUiState.EngineError(EngineErrorReason.TTS_ENGINE_NOT_INSTALLED),
+            viewModel.uiState.value,
+        )
     }
 
     // Scenario: 使用者回到前景時重新檢查權限（異常矩陣：中途關閉權限）
     @Test
-    fun `OnScreenResumed with revoked permission force-switches to PermissionDenied`() = runTest {
-        TODO("start at IdleConfig, send OnScreenResumed with access=false, assert immediate PermissionDenied")
+    fun `OnScreenResumed with revoked permission force-switches to PermissionDenied`() = runTest(testDispatcher) {
+        every { checkNotificationAccessUseCase() } returns true
+        coEvery { initializeTtsEngineUseCase() } returns Result.success(Unit)
+        coEvery { getInstalledAppsUseCase() } returns Result.success(emptyList())
+        every { observeWhitelistUseCase() } returns flowOf(emptySet())
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value is MainUiState.IdleConfig)
+
+        every { checkNotificationAccessUseCase() } returns false
+        viewModel.onIntent(MainViewIntent.OnScreenResumed)
+
+        assertEquals(MainUiState.PermissionDenied, viewModel.uiState.value)
     }
 
     // Scenario: 使用者勾選白名單 App

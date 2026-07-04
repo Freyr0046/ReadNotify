@@ -99,7 +99,9 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.activity:activity-compose:1.9.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.1'
     implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
+    kapt 'androidx.hilt:hilt-compiler:1.2.0'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     androidTestImplementation platform('androidx.compose:compose-bom:2024.06.00')
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
