@@ -10,6 +10,11 @@
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- 白名單清單需要列出裝置所有已安裝 App（doc/phase1-spec.md Assumption #12，
+         Google Play 上架需另外提交權限使用聲明） -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
     <application
         android:name=".ReadNotifyApplication"
         android:allowBackup="true"
