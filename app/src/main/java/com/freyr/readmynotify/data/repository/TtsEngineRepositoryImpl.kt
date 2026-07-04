@@ -84,6 +84,9 @@ class TtsEngineRepositoryImpl
                                 }
                             }
                         }
+                    // 協程被取消時（例如呼叫端 scope 提前結束）本地建立的 tts 尚未賦值給
+                    // textToSpeech，不 shutdown 會造成底層 TTS binder 連線洩漏。
+                    continuation.invokeOnCancellation { tts.shutdown() }
                 }
             }.onFailure {
                 if (_engineState.value !is TtsEngineState.Error) {
