@@ -5,9 +5,12 @@ import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -72,7 +75,15 @@ internal fun MainScreenContent(
 ) {
     val context = LocalContext.current
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // Android 15+ 強制 edge-to-edge，內容會預設畫到系統列（狀態列/導覽列）
+    // 底下；safeDrawing 把實際內容（文字、按鈕）從系統列往內推，背景則仍由
+    // MainActivity 的 Surface 延伸到整個視窗，維持真正的 edge-to-edge 效果。
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing),
+    ) {
         when (uiState) {
             MainUiState.InitChecking -> InitCheckingContent()
 
