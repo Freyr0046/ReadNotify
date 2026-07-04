@@ -3,8 +3,10 @@ package com.freyr.readmynotify.ui.main
 import android.content.Intent
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,8 +20,10 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -145,6 +149,9 @@ private fun InitCheckingContent(modifier: Modifier = Modifier) {
  * 搜尋框的輸入文字純粹是畫面顯示用的過濾條件，不影響白名單本身的business
  * 邏輯，因此刻意留在 Compose 本地狀態（不放進 [MainUiState]／不經過
  * [MainViewModel]），符合 UI 層「dumb」的原則。
+ *
+ * 全選/全部取消只作用在目前搜尋結果（[filteredApps]），跟搜尋框是同一組
+ * 「先縮小範圍再批次操作」的操作流程；沒有搜尋時等於作用在全部已安裝 App。
  */
 @Composable
 private fun IdleConfigContent(
@@ -161,18 +168,19 @@ private fun IdleConfigContent(
                 installedApps.filter { it.appLabel.contains(searchQuery, ignoreCase = true) }
             }
         }
+    val allFilteredAreChecked = filteredApps.isNotEmpty() && filteredApps.all { it.isChecked }
 
     Column(modifier = modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text("搜尋 App 名稱") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            singleLine = true,
+        WhitelistHeader(
+            searchQuery = searchQuery,
+            onSearchQueryChanged = { searchQuery = it },
+            allFilteredAreChecked = allFilteredAreChecked,
+            selectAllEnabled = filteredApps.isNotEmpty(),
+            onToggleAll = { targetChecked ->
+                filteredApps.forEach { item ->
+                    onIntent(MainViewIntent.OnAppWhitelistToggled(item.packageName, targetChecked))
+                }
+            },
         )
 
         if (filteredApps.isEmpty()) {
@@ -205,6 +213,53 @@ private fun IdleConfigContent(
                     .padding(16.dp),
         ) {
             Text("發送測試通知")
+        }
+    }
+}
+
+/**
+ * 說明文字 + 搜尋框 + 全選/全部取消，三者都是「幫使用者更快找到/操作
+ * 白名單清單」的輔助控制項，抽成獨立 Composable 讓 [IdleConfigContent]
+ * 專注在「清單本身要顯示什麼」。
+ */
+@Composable
+private fun WhitelistHeader(
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    allFilteredAreChecked: Boolean,
+    selectAllEnabled: Boolean,
+    onToggleAll: (checked: Boolean) -> Unit,
+) {
+    Text(
+        text = "勾選想要被朗讀通知的 App",
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChanged,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        placeholder = { Text("搜尋 App 名稱") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        singleLine = true,
+    )
+
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.End,
+    ) {
+        TextButton(
+            enabled = selectAllEnabled,
+            onClick = { onToggleAll(!allFilteredAreChecked) },
+        ) {
+            Text(if (allFilteredAreChecked) "全部取消" else "全選")
         }
     }
 }

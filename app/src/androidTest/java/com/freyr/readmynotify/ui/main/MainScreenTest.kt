@@ -85,6 +85,58 @@ class MainScreenTest {
     }
 
     @Test
+    fun idleConfig_selectAllButton_checksEveryFilteredAppThenLabelBecomesDeselectAll() {
+        val dispatched = mutableListOf<MainViewIntent>()
+        val items =
+            listOf(
+                AppWhitelistItem(packageName = "com.line", appLabel = "Line", isChecked = false),
+                AppWhitelistItem(packageName = "com.facebook.katana", appLabel = "Facebook", isChecked = false),
+            )
+
+        composeTestRule.setContent {
+            MainScreenContent(
+                uiState = MainUiState.IdleConfig(installedApps = items),
+                onIntent = { dispatched += it },
+            )
+        }
+
+        composeTestRule.onNodeWithText("全選").assertIsDisplayed().performClick()
+
+        assertEquals(
+            setOf("com.line" to true, "com.facebook.katana" to true),
+            dispatched.filterIsInstance<MainViewIntent.OnAppWhitelistToggled>()
+                .map { it.packageName to it.checked }
+                .toSet(),
+        )
+    }
+
+    @Test
+    fun idleConfig_selectAllButton_showsDeselectAllWhenEverythingAlreadyChecked() {
+        val dispatched = mutableListOf<MainViewIntent>()
+        val items =
+            listOf(
+                AppWhitelistItem(packageName = "com.line", appLabel = "Line", isChecked = true),
+                AppWhitelistItem(packageName = "com.facebook.katana", appLabel = "Facebook", isChecked = true),
+            )
+
+        composeTestRule.setContent {
+            MainScreenContent(
+                uiState = MainUiState.IdleConfig(installedApps = items),
+                onIntent = { dispatched += it },
+            )
+        }
+
+        composeTestRule.onNodeWithText("全部取消").assertIsDisplayed().performClick()
+
+        assertEquals(
+            setOf("com.line" to false, "com.facebook.katana" to false),
+            dispatched.filterIsInstance<MainViewIntent.OnAppWhitelistToggled>()
+                .map { it.packageName to it.checked }
+                .toSet(),
+        )
+    }
+
+    @Test
     fun ttsPlaying_showsSpeakingBanner() {
         composeTestRule.setContent {
             MainScreenContent(
