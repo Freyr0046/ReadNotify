@@ -98,8 +98,13 @@ dependencies {
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.activity:activity-compose:1.9.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.1'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.1'
+    // 2.8.x 對 LocalLifecycleOwner 拆分成 androidx.lifecycle.compose 與
+    // androidx.compose.ui.platform 兩個不同的 CompositionLocal，與 Compose BOM
+    // 2024.06.00（Compose UI 1.6.x）搭配會導致 collectAsStateWithLifecycle()
+    // 崩潰（IllegalStateException: CompositionLocal LocalLifecycleOwner not
+    // present，已於實機驗證重現）。固定在 2.7.0 避開此已知相容性問題。
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
     implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
     kapt 'androidx.hilt:hilt-compiler:1.2.0'
     debugImplementation 'androidx.compose.ui:ui-tooling'

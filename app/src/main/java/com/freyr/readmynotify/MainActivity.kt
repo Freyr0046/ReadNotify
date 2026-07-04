@@ -1,20 +1,44 @@
 package com.freyr.readmynotify
 
 import android.os.Bundle
-import com.freyr.readmynotify.common.BaseActivity
-import com.freyr.readmynotify.databinding.ActivityMainBinding
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.freyr.readmynotify.ui.main.MainScreen
+import dagger.hilt.android.AndroidEntryPoint
 
-class MainActivity : BaseActivity() {
-
-    private lateinit var binding: ActivityMainBinding
+/**
+ * Single-Activity host（取代 SplashActivity + Jetpack Navigation
+ * Component，見 doc/phase1-spec.md Assumption #2/#4）。冷啟動視覺改用
+ * AndroidX Core SplashScreen（見 Theme.ReadNotify.Starting）。
+ */
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContent {
+            MaterialTheme {
+                Surface {
+                    val navController = rememberNavController()
+                    NavHost(navController = navController, startDestination = Routes.MAIN) {
+                        composable(Routes.MAIN) {
+                            MainScreen()
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-//        val navController = findNavController(R.id.nav_host_fragment_content_main)
-//        navView.setupWithNavController(navController)
+    private object Routes {
+        const val MAIN = "main"
     }
 }

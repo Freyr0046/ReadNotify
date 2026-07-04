@@ -1,5 +1,8 @@
 package com.freyr.readmynotify.ui.main
 
+import android.content.Intent
+import android.provider.Settings
+import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +18,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,12 +67,17 @@ private fun MainScreenContent(
     onIntent: (MainViewIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+
     Box(modifier = modifier.fillMaxSize()) {
         when (uiState) {
             MainUiState.InitChecking -> InitCheckingContent()
 
             MainUiState.PermissionDenied -> PermissionDeniedOverlay(
-                onPermissionSettingsClicked = { onIntent(MainViewIntent.OnPermissionSettingsClicked) },
+                onPermissionSettingsClicked = {
+                    onIntent(MainViewIntent.OnPermissionSettingsClicked)
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                },
             )
 
             is MainUiState.IdleConfig -> IdleConfigContent(
@@ -87,7 +96,10 @@ private fun MainScreenContent(
 
             is MainUiState.EngineError -> EngineErrorDialog(
                 reason = uiState.reason,
-                onInstallTtsEngineClicked = { onIntent(MainViewIntent.OnInstallTtsEngineClicked) },
+                onInstallTtsEngineClicked = {
+                    onIntent(MainViewIntent.OnInstallTtsEngineClicked)
+                    context.startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA))
+                },
                 onRetryClicked = { onIntent(MainViewIntent.OnRetryEngineInitClicked) },
             )
         }
