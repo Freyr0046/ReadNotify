@@ -61,8 +61,10 @@ fun MainScreen(
     )
 }
 
+/** internal（非 private）讓 androidTest 的 Compose UI 測試可直接餵入假的
+ *  MainUiState / onIntent，不需要透過真正的 Hilt ViewModel 走一遍。 */
 @Composable
-private fun MainScreenContent(
+internal fun MainScreenContent(
     uiState: MainUiState,
     onIntent: (MainViewIntent) -> Unit,
     modifier: Modifier = Modifier,
